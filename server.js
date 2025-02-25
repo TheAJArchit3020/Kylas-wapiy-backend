@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model("User", userSchema);
 
 // 📌 Step 1: Receive Kylas Auth Code & Fetch User Data
-app.get("/kylas/callback", async (req, res) => {
+app.get("/api/kylas/callback", async (req, res) => {
   const authCode = req.query.code;
   if (!authCode) return res.status(400).send("Auth code missing!");
 
@@ -88,7 +88,7 @@ app.get("/kylas/callback", async (req, res) => {
 });
 
 // 📌 Step 2: Send OTP for Wapiy Authentication
-app.post("/send-otp", async (req, res) => {
+app.post("/api/send-otp", async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).send("Email is required.");
 
@@ -161,7 +161,7 @@ app.post("/send-otp", async (req, res) => {
 });
 
 // 📌 Step 3: Verify OTP and Map User Data
-app.post("/verify-otp", async (req, res) => {
+app.post("/api/verify-otp", async (req, res) => {
   const { email, otp, kylasUserId } = req.body;
   if (!email || !otp || !kylasUserId)
     return res.status(400).send("Email, OTP, and Kylas User ID are required.");
