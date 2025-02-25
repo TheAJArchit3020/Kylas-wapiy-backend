@@ -42,7 +42,7 @@ app.post("/api/kylas/callback", async (req, res) => {
     // Fetch Kylas user details
     try {
     } catch (error) {}
-    const kylasUser = await axios.get("https://api.kylas.io/users/me", {
+    const kylasUser = await axios.get("https://api.kylas.io/v1/users/me", {
       headers: { Authorization: `Bearer ${access_token}` },
     });
     console.log(kylasUser.data.id);
