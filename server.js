@@ -109,48 +109,48 @@ app.post("/api/send-otp", async (req, res) => {
     const business = businessList.find((b) => b.email === email);
 
     if (!business) return res.status(404).send("Email not found in Wapiy.");
+    res.send(business);
+    // // Step 3: Generate OTP
+    // const otp = otpGenerator.generate(6, {
+    //   digits: true,
+    //   alphabets: false,
+    //   specialChars: false,
+    // });
+    // const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
 
-    // Step 3: Generate OTP
-    const otp = otpGenerator.generate(6, {
-      digits: true,
-      alphabets: false,
-      specialChars: false,
-    });
-    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
+    // // Step 4: Save OTP in Database
+    // await User.findOneAndUpdate(
+    //   { email },
+    //   {
+    //     email,
+    //     businessId: business.business_id,
+    //     projectId:
+    //       business.project_ids.length > 0 ? business.project_ids[0] : null, // Ensure project exists
+    //     otp,
+    //     otpExpiresAt: otpExpiry,
+    //   },
+    //   { upsert: true }
+    // );
 
-    // Step 4: Save OTP in Database
-    await User.findOneAndUpdate(
-      { email },
-      {
-        email,
-        businessId: business.business_id,
-        projectId:
-          business.project_ids.length > 0 ? business.project_ids[0] : null, // Ensure project exists
-        otp,
-        otpExpiresAt: otpExpiry,
-      },
-      { upsert: true }
-    );
+    // // Step 5: Send OTP via Email
+    // const transporter = nodemailer.createTransport({
+    //   host: process.env.EMAIL_HOST,
+    //   port: process.env.EMAIL_PORT,
+    //   secure: true, // Use `true` for port 465, `false` for port 587
+    //   auth: {
+    //     user: process.env.EMAIL_USER,
+    //     pass: process.env.EMAIL_PASS,
+    //   },
+    // });
 
-    // Step 5: Send OTP via Email
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
-      secure: true, // Use `true` for port 465, `false` for port 587
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    // await transporter.sendMail({
+    //   from: `"Wapiy Verification" <${process.env.EMAIL_USER}>`,
+    //   to: email,
+    //   subject: "Your OTP Code",
+    //   text: `Your OTP code is: ${otp}`,
+    // });
 
-    await transporter.sendMail({
-      from: `"Wapiy Verification" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Your OTP Code",
-      text: `Your OTP code is: ${otp}`,
-    });
-
-    res.send("OTP sent successfully!");
+    // res.send("OTP sent successfully!");
   } catch (error) {
     console.error(
       "Error fetching Wapiy Business Profiles:",
