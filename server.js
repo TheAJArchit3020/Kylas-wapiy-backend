@@ -45,7 +45,7 @@ app.post("/api/kylas/callback", async (req, res) => {
     const kylasUser = await axios.get("https://api.kylas.io/users/me", {
       headers: { Authorization: `Bearer ${access_token}` },
     });
-
+    console.log(kylasUser.data.id);
     const kylasUserId = kylasUser.data.id;
 
     // Check if the user already exists, create or update as necessary
