@@ -32,47 +32,66 @@ const User = mongoose.model("User", userSchema);
 
 // 📌 Step 1: Receive Kylas Auth Code & Fetch User Data
 app.post("/api/kylas/callback", async (req, res) => {
-  const { access_token, refresh_token, expires_in } = req.body;
+  const authCode = req.body.authCode;
+  console.log(authCode);
+  if (!authCode) return res.status(400).send("Auth code missing!");
 
   try {
-    if (!access_token || !refresh_token || !expires_in)
-      return res.status(400).send("Auth code missing!");
+    // Exchange auth code for access token
+    const response = await axios.post(
+      "https://api.kylas.io/oauth/token",
+      new URLSearchParams({
+        grant_type: "authorization_code",
+        code: authCode,
+        redirect_uri: "https://api.wapiy.ai/",
+      }),
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization:
+            "Basic " +
+            Buffer.from(
+              `${process.env.KYLAS_CLIENT_ID}:${process.env.KYLAS_CLIENT_SECRET}`
+            ).toString("base64"),
+        },
+      }
+    );
+
+    const { access_token, refresh_token, expires_in } = response.data;
     const expiresAt = new Date(Date.now() + expires_in * 1000);
 
     // Fetch Kylas user details
-    try {
-    } catch (error) {}
-    const kylasUser = await axios.get("https://api.kylas.io/v1/users/me", {
+    const kylasUser = await axios.get("https://api.kylas.io/users/me", {
       headers: { Authorization: `Bearer ${access_token}` },
     });
     console.log(kylasUser.data.id);
-    // const kylasUserId = kylasUser.data.id;
+    const kylasUserId = kylasUser.data.id;
 
-    // // Check if the user already exists, create or update as necessary
-    // const existingUser = await User.findOne({ kylasUserId });
-    // if (!existingUser) {
-    //   // Create a new user
-    //   await User.create({
-    //     kylasUserId,
-    //     kylasAccessToken: access_token,
-    //     kylasRefreshToken: refresh_token,
-    //     expiresAt,
-    //     businessId: null, // Initialize with null if applicable
-    //     projectId: null, // Initialize with null if applicable
-    //     verified: false,
-    //   });
-    // } else {
-    //   // Update existing user
-    //   await User.findOneAndUpdate(
-    //     { kylasUserId },
-    //     {
-    //       kylasAccessToken: access_token,
-    //       kylasRefreshToken: refresh_token,
-    //       expiresAt,
-    //     },
-    //     { upsert: true }
-    //   );
-    // }
+    // Check if the user already exists, create or update as necessary
+    const existingUser = await User.findOne({ kylasUserId });
+    if (!existingUser) {
+      // Create a new user
+      await User.create({
+        kylasUserId,
+        kylasAccessToken: access_token,
+        kylasRefreshToken: refresh_token,
+        expiresAt,
+        businessId: null, // Initialize with null if applicable
+        projectId: null, // Initialize with null if applicable
+        verified: false,
+      });
+    } else {
+      // Update existing user
+      await User.findOneAndUpdate(
+        { kylasUserId },
+        {
+          kylasAccessToken: access_token,
+          kylasRefreshToken: refresh_token,
+          expiresAt,
+        },
+        { upsert: true }
+      );
+    }
 
     // Send Kylas User ID to frontend
     res.send({ message: "Kylas authentication successful!", kylasUserId });
