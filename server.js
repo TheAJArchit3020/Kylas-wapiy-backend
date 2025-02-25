@@ -32,35 +32,16 @@ const User = mongoose.model("User", userSchema);
 
 // 📌 Step 1: Receive Kylas Auth Code & Fetch User Data
 app.post("/api/kylas/callback", async (req, res) => {
-  const authCode = req.body.authCode;
-  console.log(authCode);
-  if (!authCode) return res.status(400).send("Auth code missing!");
+  const { access_token, refresh_token, expires_in } = req.body;
 
   try {
-    // Exchange auth code for access token
-    const response = await axios.post(
-      "https://api.kylas.io/oauth/token",
-      new URLSearchParams({
-        grant_type: "authorization_code",
-        code: authCode,
-        redirect_uri: "https://api.wapiy.ai/",
-      }),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization:
-            "Basic " +
-            Buffer.from(
-              `${process.env.KYLAS_CLIENT_ID}:${process.env.KYLAS_CLIENT_SECRET}`
-            ).toString("base64"),
-        },
-      }
-    );
-
-    const { access_token, refresh_token, expires_in } = response.data;
+    if (!access_token || !refresh_token || !expires_in)
+      return res.status(400).send("Auth code missing!");
     const expiresAt = new Date(Date.now() + expires_in * 1000);
 
     // Fetch Kylas user details
+    try {
+    } catch (error) {}
     const kylasUser = await axios.get("https://api.kylas.io/users/me", {
       headers: { Authorization: `Bearer ${access_token}` },
     });
