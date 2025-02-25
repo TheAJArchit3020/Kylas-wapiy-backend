@@ -134,7 +134,9 @@ app.post("/send-otp", async (req, res) => {
 
     // Step 5: Send OTP via Email
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: process.env.EMAIL_HOST,
+      port: process.env.EMAIL_PORT,
+      secure: true, // Use `true` for port 465, `false` for port 587
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -142,7 +144,7 @@ app.post("/send-otp", async (req, res) => {
     });
 
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `"Wapiy Verification" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Your OTP Code",
       text: `Your OTP code is: ${otp}`,
