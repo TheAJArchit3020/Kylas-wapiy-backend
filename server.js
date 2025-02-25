@@ -33,6 +33,7 @@ const User = mongoose.model("User", userSchema);
 // 📌 Step 1: Receive Kylas Auth Code & Fetch User Data
 app.post("/api/kylas/callback", async (req, res) => {
   const authCode = req.body.authCode;
+  console.log(authCode);
   if (!authCode) return res.status(400).send("Auth code missing!");
 
   try {
