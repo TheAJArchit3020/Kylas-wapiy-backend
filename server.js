@@ -59,9 +59,9 @@ app.post("/api/kylas/callback", async (req, res) => {
 
     const { access_token, refresh_token, expires_in } = response.data;
     const expiresAt = new Date(Date.now() + expires_in * 1000);
-
+    console.log(access_token);
     // Fetch Kylas user details
-    const kylasUser = await axios.get("https://api.kylas.io/users/me", {
+    const kylasUser = await axios.get("https://api.kylas.io/v1/users/me", {
       headers: { Authorization: `Bearer ${access_token}` },
     });
     console.log(kylasUser.data.id);
