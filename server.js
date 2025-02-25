@@ -46,33 +46,33 @@ app.post("/api/kylas/callback", async (req, res) => {
       headers: { Authorization: `Bearer ${access_token}` },
     });
     console.log(kylasUser.data.id);
-    const kylasUserId = kylasUser.data.id;
+    // const kylasUserId = kylasUser.data.id;
 
-    // Check if the user already exists, create or update as necessary
-    const existingUser = await User.findOne({ kylasUserId });
-    if (!existingUser) {
-      // Create a new user
-      await User.create({
-        kylasUserId,
-        kylasAccessToken: access_token,
-        kylasRefreshToken: refresh_token,
-        expiresAt,
-        businessId: null, // Initialize with null if applicable
-        projectId: null, // Initialize with null if applicable
-        verified: false,
-      });
-    } else {
-      // Update existing user
-      await User.findOneAndUpdate(
-        { kylasUserId },
-        {
-          kylasAccessToken: access_token,
-          kylasRefreshToken: refresh_token,
-          expiresAt,
-        },
-        { upsert: true }
-      );
-    }
+    // // Check if the user already exists, create or update as necessary
+    // const existingUser = await User.findOne({ kylasUserId });
+    // if (!existingUser) {
+    //   // Create a new user
+    //   await User.create({
+    //     kylasUserId,
+    //     kylasAccessToken: access_token,
+    //     kylasRefreshToken: refresh_token,
+    //     expiresAt,
+    //     businessId: null, // Initialize with null if applicable
+    //     projectId: null, // Initialize with null if applicable
+    //     verified: false,
+    //   });
+    // } else {
+    //   // Update existing user
+    //   await User.findOneAndUpdate(
+    //     { kylasUserId },
+    //     {
+    //       kylasAccessToken: access_token,
+    //       kylasRefreshToken: refresh_token,
+    //       expiresAt,
+    //     },
+    //     { upsert: true }
+    //   );
+    // }
 
     // Send Kylas User ID to frontend
     res.send({ message: "Kylas authentication successful!", kylasUserId });
