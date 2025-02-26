@@ -1,0 +1,28 @@
+{
+  "to": "+919660882136",
+  "type": "template",
+  "recipient_type": "individual",
+  "template": {
+    "name": "first_message_offer",
+    "language": {
+      "code": "en"
+    },
+    "components": [
+      {
+        "type": "header",
+        "parameters": [
+          {
+            "type": "image",
+            "image": {
+              "link": "https://img.freepik.com/free-vector/red-banner-limited-offer-vector-red-label-isolated-transparent-background_145391-862.jpg%22%7D%7D]%7D,%7B%22type%22:%22body%22,%22parameters%22:[%7B%22type%22:%22text%22,%22text%22:%2240%%22%7D,%7B%22type%22:%22text%22,%22text%22:%22Rs 150"
+            }
+          },
+          {
+            "type": "text",
+            "text": "SAVE40"
+          }
+        ]
+      }
+    ]
+  }
+}
