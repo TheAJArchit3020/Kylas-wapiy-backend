@@ -4,7 +4,7 @@ const User = require("../models/User");
 exports.kylasCallback = async (req, res) => {
   const { authCode } = req.body;
   if (!authCode) return res.status(400).send("Auth code missing!");
-  console.log(authCode);
+  console.log("this is the authCode:", authCode);
   try {
     const response = await axios.post(
       "https://api.kylas.io/oauth/token",
@@ -24,8 +24,9 @@ exports.kylasCallback = async (req, res) => {
         },
       }
     );
-    console.log("got the access token: ", access_token);
+
     const { access_token, refresh_token, expires_in } = response.data;
+    console.log("got the access token: ", access_token);
     const expiresAt = new Date(Date.now() + expires_in * 1000);
 
     const kylasUser = await axios.get("https://api.kylas.io/v1/users/me", {
