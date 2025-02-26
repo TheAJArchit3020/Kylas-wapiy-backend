@@ -4,7 +4,7 @@ const User = require("../models/User"); // Import User Schema
 const router = express.Router();
 
 // 🔥 Handle Kylas App Actions (CLICK_TO_CALL & BULK_ACTION)
-router.post("/appactions", async (req, res) => {
+router.get("/appactions", async (req, res) => {
   try {
     const { location, userId, phoneNumber, tenantId } = req.query;
     const filters = req.body.filters ? JSON.parse(req.body.filters) : null; // Extract form data if BULK_ACTION
