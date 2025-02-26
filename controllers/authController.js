@@ -24,7 +24,7 @@ exports.kylasCallback = async (req, res) => {
         },
       }
     );
-    console.log("got the access token");
+    console.log("got the access token: ", access_token);
     const { access_token, refresh_token, expires_in } = response.data;
     const expiresAt = new Date(Date.now() + expires_in * 1000);
 
