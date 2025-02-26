@@ -1,0 +1,22 @@
+{
+  "id": "67befa0fff6b710be0244dc3",
+  "assistant_name": "DMRANK TECHNOLOGIES PVT LTD",
+  "name": "test_04",
+  "label": "test_04",
+  "status": "APPROVED",
+  "call_to_action": [],
+  "quick_replies": [],
+  "type": "CAROUSEL",
+  "language": "English",
+  "text": "Hello {{1}},\nThis is a test",
+  "sample_text": "Hello [Archit],\nThis is a test",
+  "message_action_type": "All",
+  "total_parameters": 1,
+  "project_id": "679cafad29f5b10bf0765fe5",
+  "business_id": "679cafad29f5b10bf0765fe0",
+  "created_at": 1740569103713,
+  "updated_at": 1740569125067,
+  "partner_id": "679caf8829f5b10bf0765fbe",
+  "category": "MARKETING",
+  "rejected_reason": "NONE"
+}
