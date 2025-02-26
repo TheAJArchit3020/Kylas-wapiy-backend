@@ -1,6 +1,6 @@
 const express = require("express");
 const axios = require("axios");
-const User = require("../models/userModel"); // Import User Schema
+const User = require("../models/User"); // Import User Schema
 const router = express.Router();
 
 // 🔥 Handle Kylas App Actions (CLICK_TO_CALL & BULK_ACTION)
