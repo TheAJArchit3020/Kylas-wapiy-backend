@@ -24,14 +24,14 @@ exports.kylasCallback = async (req, res) => {
         },
       }
     );
-
+    console.log("got the access token");
     const { access_token, refresh_token, expires_in } = response.data;
     const expiresAt = new Date(Date.now() + expires_in * 1000);
 
     const kylasUser = await axios.get("https://api.kylas.io/v1/users/me", {
       headers: { Authorization: `Bearer ${access_token}` },
     });
-
+    console.log("Getting the user");
     const kylasUserId = kylasUser.data.id;
 
     // Save or update the user in the database
