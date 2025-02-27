@@ -2,8 +2,17 @@ const axios = require("axios");
 const User = require("../models/User");
 const API_WAPIY = "https://apis.whatsapp.redingtongroup.com";
 const API_KYLAS = "https://api.kylas.io/v1";
+const PARTNER_API_KEY = process.env.WAPIY_PARTNER_API_KEY;
 
 // **1. Fetch Lead Details from Kylas**
+
+const getProjectId = async (userId) => {
+  const user = await User.findOne({ kylasUserId: userId });
+  if (!user || !user.projectId) {
+    throw new Error("Project ID not found for this user.");
+  }
+  return user.projectId;
+};
 exports.getLeadDetails = async (req, res) => {
   try {
     const { leadId, userId } = req.params;
@@ -45,23 +54,39 @@ exports.getLeadDetails = async (req, res) => {
   }
 };
 
-// **2. Check or Create Contact in Wapiy**
 exports.checkOrCreateContact = async (req, res) => {
   try {
-    const { projectId, phoneNumber } = req.params;
+    const { userId, phoneNumber } = req.params;
+
+    // Get project ID from the user database
+    const projectId = await getProjectId(userId);
 
     // Step 1: Check if contact exists in Wapiy
     const fetchResponse = await axios.get(
-      `${API_WAPIY}/project-apis/v1/project/${projectId}/contact?action=FetchContact&mobile_number=${phoneNumber}`
+      `${API_WAPIY}/project-apis/v1/project/${projectId}/contact?action=FetchContact&mobile_number=${phoneNumber}`,
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-Partner-API-Key": PARTNER_API_KEY,
+        },
+      }
     );
 
     let contact = fetchResponse.data;
 
-    if (!contact) {
+    if (!contact || !contact.id) {
       // Step 2: Create contact if not found
       const createResponse = await axios.post(
         `${API_WAPIY}/project-apis/v1/project/${projectId}/contact`,
-        { mobile_number: phoneNumber }
+        { mobile_number: phoneNumber },
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-Partner-API-Key": PARTNER_API_KEY,
+          },
+        }
       );
       contact = createResponse.data;
     }
@@ -73,16 +98,19 @@ exports.checkOrCreateContact = async (req, res) => {
   } catch (error) {
     console.error(
       "Error fetching/creating contact:",
-      error.response?.data || error
+      error.response?.data || error.message
     );
     res.status(500).json({ error: "Failed to fetch/create contact" });
   }
 };
 
-// **3. Send Normal Message**
+// **2. Send Normal Message**
 exports.sendMessage = async (req, res) => {
   try {
-    const { to, message } = req.body;
+    const { userId, to, message } = req.body;
+
+    // Get project ID from the user database
+    const projectId = await getProjectId(userId);
 
     const payload = {
       to,
@@ -90,19 +118,35 @@ exports.sendMessage = async (req, res) => {
       text: { body: message },
     };
 
-    await axios.post(`${API_WAPIY}/project-apis/v1/messages`, payload);
+    await axios.post(
+      `${API_WAPIY}/project-apis/v1/project/${projectId}/messages`,
+      payload,
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-Partner-API-Key": PARTNER_API_KEY,
+        },
+      }
+    );
 
     res.json({ message: "Message sent successfully!" });
   } catch (error) {
-    console.error("Error sending message:", error.response?.data || error);
+    console.error(
+      "Error sending message:",
+      error.response?.data || error.message
+    );
     res.status(500).json({ error: "Failed to send message." });
   }
 };
 
-// **4. Send Template Message**
+// **3. Send Template Message**
 exports.sendTemplateMessage = async (req, res) => {
   try {
-    const { to, template } = req.body;
+    const { userId, to, template } = req.body;
+
+    // Get project ID from the user database
+    const projectId = await getProjectId(userId);
 
     const payload = {
       to,
@@ -110,13 +154,23 @@ exports.sendTemplateMessage = async (req, res) => {
       template,
     };
 
-    await axios.post(`${API_WAPIY}/project-apis/v1/messages`, payload);
+    await axios.post(
+      `${API_WAPIY}/project-apis/v1/project/${projectId}/messages`,
+      payload,
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-Partner-API-Key": PARTNER_API_KEY,
+        },
+      }
+    );
 
     res.json({ message: "Template message sent successfully!" });
   } catch (error) {
     console.error(
       "Error sending template message:",
-      error.response?.data || error
+      error.response?.data || error.message
     );
     res.status(500).json({ error: "Failed to send template message." });
   }
