@@ -159,41 +159,55 @@ exports.sendMessage = async (req, res) => {
 // **3. Send Template Message**
 exports.sendTemplateMessage = async (req, res) => {
   try {
-    const { userId, to, template } = req.body;
+    const { userId, to, template, leadId } = req.body;
 
     // Get project ID from the user database
     const projectId = await getProjectId(userId);
 
-    // Clone the template object to avoid modifying the original request body
+    // Find user in DB
+    const user = await User.findOne({ kylasUserId: userId });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Fetch lead details from Kylas API
+    const kylasAccessToken = user.kylasAccessToken;
+    const leadResponse = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
+      headers: { Authorization: `Bearer ${kylasAccessToken}` },
+    });
+
+    const leadData = leadResponse.data;
+    const leadName = `${leadData.firstName || ""} ${
+      leadData.lastName || ""
+    }`.trim();
+    const companyName = leadData.companyName || "N/A";
+
+    // Clone the template object to avoid modifying the original
     const sanitizedTemplate = JSON.parse(JSON.stringify(template));
 
-    // Recursive function to remove `_id` from any object
-    const removeIds = (obj) => {
-      if (Array.isArray(obj)) {
-        return obj.map(removeIds);
-      } else if (obj !== null && typeof obj === "object") {
-        const { _id, ...rest } = obj; // Remove _id
-        return Object.fromEntries(
-          Object.entries(rest).map(([key, value]) => [key, removeIds(value)])
-        );
+    // Remove unwanted `type` field from the template object
+    delete sanitizedTemplate.type;
+
+    // Replace lead_name and company_name placeholders
+    sanitizedTemplate.components.forEach((component) => {
+      if (component.parameters) {
+        component.parameters = component.parameters.map((param) => ({
+          type: "text",
+          text: param.value === "lead_name" ? leadName : companyName,
+        }));
       }
-      return obj;
-    };
+    });
 
-    // Clean the entire template object
-    const cleanedTemplate = removeIds(sanitizedTemplate);
-
-    // Remove the unwanted 'type' field inside the template object
-    delete cleanedTemplate.type;
-
+    // Prepare final payload
     const payload = {
       to,
-      type: "template", // This is required
-      template: cleanedTemplate,
+      type: "template",
+      template: sanitizedTemplate,
     };
 
-    console.log("Sanitized Payload:", JSON.stringify(payload, null, 2));
+    console.log("Final Payload:", JSON.stringify(payload, null, 2));
 
+    // Send template message to WhatsApp API
     await axios.post(
       `${API_WAPIY}/project-apis/v1/project/${projectId}/messages`,
       payload,
