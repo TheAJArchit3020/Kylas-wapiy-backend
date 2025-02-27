@@ -11,6 +11,6 @@ connectDB();
 app.use("/api", require("./routes/authRoutes"));
 app.use("/api", require("./routes/otpRoutes"));
 app.use("/api", require("./routes/messageRoutes"));
-const appActionsRoutes = require("./routes/appActionsRoutes");
-app.use("/api", appActionsRoutes);
+const projectRoutes = require("./routes/projectRoutes");
+app.use("/api", projectRoutes);
 app.listen(3000, () => console.log("✅ Server running on port 3000"));
