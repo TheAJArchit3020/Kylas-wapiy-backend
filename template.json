@@ -1,6 +1,6 @@
 {
-  "userId": "61244",
   "to": "918888556524",
+  "type": "template",
   "template": {
     "language": { "policy": "deterministic", "code": "en" },
     "name": "new_customer2",

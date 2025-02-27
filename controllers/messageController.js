@@ -164,12 +164,18 @@ exports.sendTemplateMessage = async (req, res) => {
     // Get project ID from the user database
     const projectId = await getProjectId(userId);
 
+    // Remove `type` key from the `template` object if it exists
+    const sanitizedTemplate = { ...template };
+    delete sanitizedTemplate.type;
+
     const payload = {
       to,
       type: "template",
-      template,
+      template: sanitizedTemplate, // Use sanitized template
     };
-    console.log(JSON.stringify(payload));
+
+    console.log("Payload Sent:", JSON.stringify(payload));
+
     await axios.post(
       `${API_WAPIY}/project-apis/v1/project/${projectId}/messages`,
       payload,
