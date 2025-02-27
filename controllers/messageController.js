@@ -160,7 +160,7 @@ exports.sendMessage = async (req, res) => {
 exports.sendTemplateMessage = async (req, res) => {
   try {
     const { userId, to, template, leadId } = req.body;
-
+    console.log("recieved Template: ", JSON.stringify(template, null, 2));
     // Get project ID from the user database
     const projectId = await getProjectId(userId);
 
