@@ -1,128 +1,123 @@
 const axios = require("axios");
 const User = require("../models/User");
-exports.getTemplates = async (req, res) => {
-  const { kylasUserId } = req.params;
+const API_WAPIY = "https://apis.whatsapp.redingtongroup.com";
+const API_KYLAS = "https://api.kylas.io/v1";
 
-  if (!kylasUserId) return res.status(400).send("Kylas User ID is required.");
-
+// **1. Fetch Lead Details from Kylas**
+exports.getLeadDetails = async (req, res) => {
   try {
-    // Step 1: Fetch User from Database
-    const user = await User.findOne({ kylasUserId });
+    const { leadId, userId } = req.params;
 
-    if (!user || !user.projectId) {
-      return res.status(404).send("User or Project ID not found.");
+    // Find user to get their Kylas access token
+    const user = await User.findOne({ kylasUserId: userId });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
     }
 
-    const projectId = user.projectId; // Get Project ID from Database
-
-    // Step 2: Fetch Templates from Wapiy API
-    const response = await axios.get(
-      `https://apis.whatsapp.redingtongroup.com/project-apis/v1/project/${projectId}/wa_template/`,
-      {
-        headers: {
-          "X-Partner-API-Key": process.env.WAPIY_PARTNER_API_KEY,
-        },
-      }
-    );
-
-    res.send(response.data);
-  } catch (error) {
-    console.error(
-      "Error fetching templates:",
-      error.response?.data || error.message
-    );
-    res.status(500).send("Failed to fetch templates.");
-  }
-};
-
-exports.sendMessage = async (req, res) => {
-  const { kylasUserId, to, message } = req.body;
-
-  if (!kylasUserId || !to || !message)
-    return res
-      .status(400)
-      .send("Kylas User ID, recipient number, and message are required.");
-
-  try {
-    // Fetch User from Database
-    const user = await User.findOne({ kylasUserId });
-    if (!user || !user.projectId)
-      return res.status(404).send("User or Project ID not found.");
-
-    // Send Message to Wapiy API
-    const response = await axios.post(
-      `https://apis.whatsapp.redingtongroup.com/project-apis/v1/project/${user.projectId}/messages`,
-      {
-        messaging_product: "whatsapp",
-        recipient_type: "individual",
-        to,
-        type: "text",
-        text: { body: message },
+    const kylasAccessToken = user.kylasAccessToken;
+    const response = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
+      headers: {
+        Authorization: `Bearer ${kylasAccessToken}`,
       },
-      {
-        headers: {
-          "X-Partner-API-Key": process.env.WAPIY_PARTNER_API_KEY,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    res.send({
-      message: "Message sent successfully!",
-      response: response.data,
     });
+
+    const leadData = response.data;
+
+    if (!leadData || !leadData.phoneNumbers) {
+      return res.status(404).json({ error: "No phone numbers found" });
+    }
+
+    // Extract phone numbers
+    const phoneNumbers = leadData.phoneNumbers.map((phone) => ({
+      type: phone.type,
+      number: phone.value,
+      dialCode: phone.dialCode,
+    }));
+
+    res.json({ phoneNumbers });
   } catch (error) {
     console.error(
-      "Error sending message:",
-      error.response?.data || error.message
+      "Error fetching lead details:",
+      error.response?.data || error
     );
-    res.status(500).send("Failed to send message.");
+    res.status(500).json({ error: "Failed to fetch lead details" });
   }
 };
 
-// 📌 Send Template Message
-exports.sendTemplateMessage = async (req, res) => {
-  const { kylasUserId, to, template } = req.body;
+// **2. Check or Create Contact in Wapiy**
+exports.checkOrCreateContact = async (req, res) => {
+  try {
+    const { projectId, phoneNumber } = req.params;
 
-  if (!kylasUserId || !to || !template?.name || !template?.language)
-    return res
-      .status(400)
-      .send(
-        "Kylas User ID, recipient number, and template details are required."
+    // Step 1: Check if contact exists in Wapiy
+    const fetchResponse = await axios.get(
+      `${API_WAPIY}/project-apis/v1/project/${projectId}/contact?action=FetchContact&mobile_number=${phoneNumber}`
+    );
+
+    let contact = fetchResponse.data;
+
+    if (!contact) {
+      // Step 2: Create contact if not found
+      const createResponse = await axios.post(
+        `${API_WAPIY}/project-apis/v1/project/${projectId}/contact`,
+        { mobile_number: phoneNumber }
       );
+      contact = createResponse.data;
+    }
 
-  try {
-    // Fetch User from Database
-    const user = await User.findOne({ kylasUserId });
-    if (!user || !user.projectId)
-      return res.status(404).send("User or Project ID not found.");
-
-    // Send Template Message to Wapiy API
-    const response = await axios.post(
-      `https://apis.whatsapp.redingtongroup.com/project-apis/v1/project/${user.projectId}/messages`,
-      {
-        to,
-        type: "template",
-        recipient_type: "individual",
-        template,
-      },
-      {
-        headers: {
-          "X-Partner-API-Key": process.env.WAPIY_PARTNER_API_KEY,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    res.status(200).send({
-      message: "Template message sent successfully!",
-      response: response.data,
+    res.json({
+      is_intervened: contact.is_intervened,
+      is_requesting: contact.is_requesting,
     });
+  } catch (error) {
+    console.error(
+      "Error fetching/creating contact:",
+      error.response?.data || error
+    );
+    res.status(500).json({ error: "Failed to fetch/create contact" });
+  }
+};
+
+// **3. Send Normal Message**
+exports.sendMessage = async (req, res) => {
+  try {
+    const { to, message } = req.body;
+
+    const payload = {
+      to,
+      type: "text",
+      text: { body: message },
+    };
+
+    await axios.post(`${API_WAPIY}/project-apis/v1/messages`, payload);
+
+    res.json({ message: "Message sent successfully!" });
+  } catch (error) {
+    console.error("Error sending message:", error.response?.data || error);
+    res.status(500).json({ error: "Failed to send message." });
+  }
+};
+
+// **4. Send Template Message**
+exports.sendTemplateMessage = async (req, res) => {
+  try {
+    const { to, template } = req.body;
+
+    const payload = {
+      to,
+      type: "template",
+      template,
+    };
+
+    await axios.post(`${API_WAPIY}/project-apis/v1/messages`, payload);
+
+    res.json({ message: "Template message sent successfully!" });
   } catch (error) {
     console.error(
       "Error sending template message:",
-      error.response?.data || error.message
+      error.response?.data || error
     );
-    res.status(500).send("Failed to send template message.");
+    res.status(500).json({ error: "Failed to send template message." });
   }
 };
