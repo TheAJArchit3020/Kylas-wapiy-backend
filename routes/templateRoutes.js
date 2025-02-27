@@ -28,6 +28,17 @@ router.post("/save-template", async (req, res) => {
       // Create a new entry if no templates exist for the user
       userTemplate = new Template({ userId: user._id, templates: [template] });
     } else {
+      // Check if the template name already exists
+      const existingTemplate = userTemplate.templates.find(
+        (t) => t.name === template.name
+      );
+
+      if (existingTemplate) {
+        return res
+          .status(400)
+          .json({ error: "Template with this name already exists" });
+      }
+
       // Append new template to the user's existing template list
       userTemplate.templates.push(template);
     }
@@ -38,6 +49,55 @@ router.post("/save-template", async (req, res) => {
     res.status(200).json({ message: "Template saved successfully" });
   } catch (error) {
     console.error("Error saving template:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.delete("/delete-template", async (req, res) => {
+  try {
+    const { userId, templateName } = req.body;
+
+    if (!userId || !templateName) {
+      return res
+        .status(400)
+        .json({ error: "User ID and template name are required" });
+    }
+
+    // Step 1: Find the user using Kylas User ID
+    const user = await User.findOne({ kylasUserId: userId });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found in the database" });
+    }
+
+    // Step 2: Find the user's template collection
+    let userTemplate = await Template.findOne({ userId: user._id });
+
+    if (!userTemplate) {
+      return res
+        .status(404)
+        .json({ error: "No templates found for this user" });
+    }
+
+    // Step 3: Remove the template from the user's template list
+    const updatedTemplates = userTemplate.templates.filter(
+      (t) => t.name !== templateName
+    );
+
+    if (updatedTemplates.length === userTemplate.templates.length) {
+      return res.status(404).json({ error: "Template not found" });
+    }
+
+    // Step 4: Save the updated template list
+    userTemplate.templates = updatedTemplates;
+    await userTemplate.save();
+
+    console.log(
+      `Template "${templateName}" deleted for user ${user.kylasUserId}`
+    );
+    res.status(200).json({ message: "Template deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting template:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
