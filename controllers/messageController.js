@@ -44,7 +44,12 @@ exports.getLeadDetails = async (req, res) => {
       dialCode: phone.dialCode,
     }));
 
-    res.json({ phoneNumbers });
+    // Extract lead name (firstName + lastName)
+    const leadName = `${leadData.firstName || ""} ${
+      leadData.lastName || ""
+    }`.trim();
+
+    res.json({ phoneNumbers, leadName });
   } catch (error) {
     console.error(
       "Error fetching lead details:",
@@ -56,7 +61,7 @@ exports.getLeadDetails = async (req, res) => {
 
 exports.checkOrCreateContact = async (req, res) => {
   try {
-    const { userId, phoneNumber } = req.params;
+    const { userId, phoneNumber, name } = req.body; // Accept name in request body
 
     // Get project ID from the user database
     const projectId = await getProjectId(userId);
@@ -83,7 +88,7 @@ exports.checkOrCreateContact = async (req, res) => {
         // Step 2: Create contact if not found
         const createResponse = await axios.post(
           `${API_WAPIY}/project-apis/v1/project/${projectId}/contact`,
-          { mobile_number: phoneNumber },
+          { mobile_number: phoneNumber, name: name || "Unknown" }, // Send name
           {
             headers: {
               Accept: "application/json",
