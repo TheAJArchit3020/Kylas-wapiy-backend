@@ -61,17 +61,22 @@ exports.checkOrCreateContact = async (req, res) => {
     // Get project ID from the user database
     const projectId = await getProjectId(userId);
 
+    let fetchResponse;
     // Step 1: Check if contact exists in Wapiy
-    const fetchResponse = await axios.get(
-      `${API_WAPIY}/project-apis/v1/project/${projectId}/contact?action=FetchContact&mobile_number=${phoneNumber}`,
-      {
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "X-Partner-API-Key": PARTNER_API_KEY,
-        },
-      }
-    );
+    try {
+      fetchResponse = await axios.get(
+        `${API_WAPIY}/project-apis/v1/project/${projectId}/contact?action=FetchContact&mobile_number=${phoneNumber}`,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-Partner-API-Key": PARTNER_API_KEY,
+          },
+        }
+      );
+    } catch (error) {
+      console.log(error);
+    }
 
     let contact = fetchResponse.data;
 
