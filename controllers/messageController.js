@@ -61,10 +61,11 @@ exports.checkOrCreateContact = async (req, res) => {
     // Get project ID from the user database
     const projectId = await getProjectId(userId);
 
-    let fetchResponse;
+    let contact = null;
+
     // Step 1: Check if contact exists in Wapiy
     try {
-      fetchResponse = await axios.get(
+      const fetchResponse = await axios.get(
         `${API_WAPIY}/project-apis/v1/project/${projectId}/contact?action=FetchContact&mobile_number=${phoneNumber}`,
         {
           headers: {
@@ -74,26 +75,31 @@ exports.checkOrCreateContact = async (req, res) => {
           },
         }
       );
+      contact = fetchResponse.data;
     } catch (error) {
-      console.log(error);
-    }
+      if (error.response && error.response.status === 404) {
+        console.log("Contact not found. Creating a new one...");
 
-    let contact = fetchResponse.data;
-
-    if (!contact || !contact.id) {
-      // Step 2: Create contact if not found
-      const createResponse = await axios.post(
-        `${API_WAPIY}/project-apis/v1/project/${projectId}/contact`,
-        { mobile_number: phoneNumber },
-        {
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "X-Partner-API-Key": PARTNER_API_KEY,
-          },
-        }
-      );
-      contact = createResponse.data;
+        // Step 2: Create contact if not found
+        const createResponse = await axios.post(
+          `${API_WAPIY}/project-apis/v1/project/${projectId}/contact`,
+          { mobile_number: phoneNumber },
+          {
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "X-Partner-API-Key": PARTNER_API_KEY,
+            },
+          }
+        );
+        contact = createResponse.data;
+      } else {
+        console.error(
+          "Error fetching contact:",
+          error.response?.data || error.message
+        );
+        return res.status(500).json({ error: "Failed to fetch contact" });
+      }
     }
 
     res.json({
@@ -102,7 +108,7 @@ exports.checkOrCreateContact = async (req, res) => {
     });
   } catch (error) {
     console.error(
-      "Error fetching/creating contact:",
+      "Error in checkOrCreateContact:",
       error.response?.data || error.message
     );
     res.status(500).json({ error: "Failed to fetch/create contact" });
