@@ -16,21 +16,17 @@ const getProjectId = async (userId) => {
 exports.getLeadDetails = async (req, res) => {
   try {
     const { leadId, userId } = req.params;
-
     // Find user to get their Kylas access token
     const user = await User.findOne({ kylasUserId: userId });
-
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-
     const kylasAccessToken = user.kylasAccessToken;
     const response = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
       headers: {
         Authorization: `Bearer ${kylasAccessToken}`,
       },
     });
-
     const leadData = response.data;
 
     if (!leadData || !leadData.phoneNumbers) {
@@ -156,11 +152,10 @@ exports.sendMessage = async (req, res) => {
   }
 };
 
-// **3. Send Template Message**
 exports.sendTemplateMessage = async (req, res) => {
   try {
     const { userId, to, template, leadId } = req.body;
-    console.log("recieved Template: ", JSON.stringify(template, null, 2));
+
     // Get project ID from the user database
     const projectId = await getProjectId(userId);
 
@@ -185,16 +180,31 @@ exports.sendTemplateMessage = async (req, res) => {
     // Clone the template object to avoid modifying the original
     const sanitizedTemplate = JSON.parse(JSON.stringify(template));
 
-    // Remove unwanted `type` field from the template object
+    // Remove unwanted `type` field inside the template object
     delete sanitizedTemplate.type;
 
-    // Replace lead_name and company_name placeholders
+    // Replace placeholders dynamically
     sanitizedTemplate.components.forEach((component) => {
       if (component.parameters) {
-        component.parameters = component.parameters.map((param) => ({
-          type: "text",
-          text: param.value === "lead_name" ? leadName : companyName,
-        }));
+        component.parameters = component.parameters.map((param) => {
+          const formattedParam = { type: param.type };
+
+          if (param.type === "text") {
+            formattedParam.text =
+              param.text === "lead_name" ? leadName : companyName;
+          } else if (param.type === "image") {
+            formattedParam.image = { link: param.image?.link };
+          } else if (param.type === "video") {
+            formattedParam.video = { link: param.video?.link };
+          } else if (param.type === "document") {
+            formattedParam.document = {
+              link: param.document?.link,
+              filename: param.document?.filename || "document.pdf",
+            };
+          }
+
+          return formattedParam;
+        });
       }
     });
 

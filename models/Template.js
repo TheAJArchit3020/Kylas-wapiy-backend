@@ -11,11 +11,15 @@ const TemplateSchema = new mongoose.Schema({
       },
       components: [
         {
-          type: { type: String },
+          type: { type: String, required: true },
           parameters: [
             {
-              value: { type: String, default: "lead_name" }, // lead_name, company_name
-              fallback_value: { type: String, default: "N/A" },
+              type: { type: String, required: true }, // text, image, video, document
+              text: { type: String }, // For text-based parameters
+              image: { link: String }, // For image-based parameters
+              video: { link: String }, // For video-based parameters
+              document: { link: String, filename: String }, // For document-based parameters
+              fallback_value: { type: String, default: "N/A" }, // Default fallback value
             },
           ],
         },

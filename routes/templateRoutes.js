@@ -3,7 +3,6 @@ const router = express.Router();
 const User = require("../models/User");
 const Template = require("../models/Template");
 
-// 📌 Save Template (First find the user, then store the template)
 router.post("/save-template", async (req, res) => {
   try {
     const { userId, template } = req.body;
@@ -14,38 +13,52 @@ router.post("/save-template", async (req, res) => {
         .json({ error: "User ID and template are required" });
     }
 
-    // Step 1: Find the user using Kylas User ID
+    // Find the user using Kylas User ID
     const user = await User.findOne({ kylasUserId: userId });
-
     if (!user) {
       return res.status(404).json({ error: "User not found in the database" });
     }
 
-    // Step 2: Check if the user already has templates
+    // Check if the user already has templates
     let userTemplate = await Template.findOne({ userId: user._id });
 
     if (!userTemplate) {
-      // Create a new entry if no templates exist for the user
-      userTemplate = new Template({ userId: user._id, templates: [template] });
-    } else {
-      // Check if the template name already exists
-      const existingTemplate = userTemplate.templates.find(
-        (t) => t.name === template.name
-      );
-
-      if (existingTemplate) {
-        return res
-          .status(400)
-          .json({ error: "Template with this name already exists" });
-      }
-
-      // Append new template to the user's existing template list
-      userTemplate.templates.push(template);
+      userTemplate = new Template({ userId: user._id, templates: [] });
     }
 
-    await userTemplate.save();
-    console.log(`Template saved for user ${user.kylasUserId}`);
+    // Ensure correct parameter structure
+    const sanitizedTemplate = JSON.parse(JSON.stringify(template));
 
+    sanitizedTemplate.components.forEach((component) => {
+      if (component.parameters) {
+        component.parameters = component.parameters.map((param) => {
+          // Ensure type exists and format fields correctly
+          const formattedParam = { type: param.type };
+
+          if (param.type === "text") {
+            formattedParam.text = param.text;
+            formattedParam.fallback_value = param.fallback_value || "N/A";
+          } else if (param.type === "image") {
+            formattedParam.image = { link: param.image?.link };
+          } else if (param.type === "video") {
+            formattedParam.video = { link: param.video?.link };
+          } else if (param.type === "document") {
+            formattedParam.document = {
+              link: param.document?.link,
+              filename: param.document?.filename || "document.pdf",
+            };
+          }
+
+          return formattedParam;
+        });
+      }
+    });
+
+    // Save the sanitized template
+    userTemplate.templates.push(sanitizedTemplate);
+    await userTemplate.save();
+
+    console.log(`Template saved for user ${user.kylasUserId}`);
     res.status(200).json({ message: "Template saved successfully" });
   } catch (error) {
     console.error("Error saving template:", error);
