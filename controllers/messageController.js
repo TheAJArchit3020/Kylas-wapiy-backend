@@ -164,17 +164,29 @@ exports.sendTemplateMessage = async (req, res) => {
     // Get project ID from the user database
     const projectId = await getProjectId(userId);
 
-    // Remove `type` key from the `template` object if it exists
-    const sanitizedTemplate = { ...template };
-    delete sanitizedTemplate.type;
+    // Clone the template object to avoid modifying the original request body
+    const sanitizedTemplate = JSON.parse(JSON.stringify(template));
+
+    // Remove unnecessary fields
+    delete sanitizedTemplate.type; // Remove 'type' from template
+
+    // Remove '_id' fields from components and their parameters
+    if (sanitizedTemplate.components) {
+      sanitizedTemplate.components = sanitizedTemplate.components.map(
+        ({ _id, parameters, ...component }) => ({
+          ...component,
+          parameters: parameters?.map(({ _id, ...param }) => param) || [],
+        })
+      );
+    }
 
     const payload = {
       to,
-      type: "template",
-      template: sanitizedTemplate, // Use sanitized template
+      type: "template", // This is required
+      template: sanitizedTemplate,
     };
 
-    console.log("Payload Sent:", JSON.stringify(payload));
+    console.log("Sanitized Payload:", JSON.stringify(payload, null, 2));
 
     await axios.post(
       `${API_WAPIY}/project-apis/v1/project/${projectId}/messages`,
