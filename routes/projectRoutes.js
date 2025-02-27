@@ -18,7 +18,7 @@ router.get("/get-projects", async (req, res) => {
 
     // Fetch list of projects from Redington API
     const response = await axios.get(
-      `https://apis.whatsapp.redingtongroup.com/partner-apis/v1/partner/${process.env.PARTNER_ID}/business/${user.businessId}/projects`,
+      `https://apis.whatsapp.redingtongroup.com/partner-apis/v1/partner/${process.env.PARTNER_ID}/business/${user.businessId}/project`,
       {
         headers: {
           "X-Partner-API-Key": process.env.WAPIY_PARTNER_API_KEY,
