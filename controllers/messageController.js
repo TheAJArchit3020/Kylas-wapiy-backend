@@ -169,7 +169,7 @@ exports.sendTemplateMessage = async (req, res) => {
       type: "template",
       template,
     };
-
+    console.log(JSON.stringify(payload));
     await axios.post(
       `${API_WAPIY}/project-apis/v1/project/${projectId}/messages`,
       payload,
