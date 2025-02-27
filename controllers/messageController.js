@@ -167,23 +167,29 @@ exports.sendTemplateMessage = async (req, res) => {
     // Clone the template object to avoid modifying the original request body
     const sanitizedTemplate = JSON.parse(JSON.stringify(template));
 
-    // Remove unnecessary fields
-    delete sanitizedTemplate.type; // Remove 'type' from template
+    // Recursive function to remove `_id` from any object
+    const removeIds = (obj) => {
+      if (Array.isArray(obj)) {
+        return obj.map(removeIds);
+      } else if (obj !== null && typeof obj === "object") {
+        const { _id, ...rest } = obj; // Remove _id
+        return Object.fromEntries(
+          Object.entries(rest).map(([key, value]) => [key, removeIds(value)])
+        );
+      }
+      return obj;
+    };
 
-    // Remove '_id' fields from components and their parameters
-    if (sanitizedTemplate.components) {
-      sanitizedTemplate.components = sanitizedTemplate.components.map(
-        ({ _id, parameters, ...component }) => ({
-          ...component,
-          parameters: parameters?.map(({ _id, ...param }) => param) || [],
-        })
-      );
-    }
+    // Clean the entire template object
+    const cleanedTemplate = removeIds(sanitizedTemplate);
+
+    // Remove the unwanted 'type' field inside the template object
+    delete cleanedTemplate.type;
 
     const payload = {
       to,
       type: "template", // This is required
-      template: sanitizedTemplate,
+      template: cleanedTemplate,
     };
 
     console.log("Sanitized Payload:", JSON.stringify(payload, null, 2));
