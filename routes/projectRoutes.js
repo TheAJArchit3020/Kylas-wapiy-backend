@@ -30,9 +30,9 @@ router.get("/get-projects", async (req, res) => {
 
     // Map project list & check if the project is already connected
     const formattedProjects = projects.map((project) => ({
-      id: project.project_id,
-      name: project.project_name,
-      connected: user.projectId === project.project_id, // Check if the project is connected
+      id: project.id,
+      name: project.name,
+      connected: user.projectId === project.id, // Check if the project is connected
     }));
 
     res.status(200).json({ projects: formattedProjects });
