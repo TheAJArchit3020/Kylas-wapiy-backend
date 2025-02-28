@@ -351,7 +351,6 @@ exports.sendMessage = async (req, res) => {
           Accept: "application/json",
           "Content-Type": "application/json",
           "X-Partner-API-Key": PARTNER_API_KEY,
-          "X-Project-API-Pwd": PROJECT_API_PWD,
         },
       }
     );
