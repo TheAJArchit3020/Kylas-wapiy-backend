@@ -14,7 +14,7 @@ const TemplateSchema = new mongoose.Schema({
           type: { type: String, required: true },
           parameters: [
             {
-              type: { type: String, required: true }, // text, image, video, document
+              type: { type: String }, // text, image, video, document
               text: { type: String }, // For text-based parameters
               image: { link: String }, // For image-based parameters
               video: { link: String }, // For video-based parameters
