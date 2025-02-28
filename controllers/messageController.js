@@ -246,6 +246,7 @@ const logMessageInKylas = async ({
   senderNumber,
   recipientNumber,
   attachments = [],
+  recipientName,
 }) => {
   try {
     const user = await User.findOne({ kylasUserId: userId });
@@ -269,6 +270,7 @@ const logMessageInKylas = async ({
           entity: "lead",
           id: leadId,
           phoneNumber: recipientNumber,
+          name: "test",
         },
       ],
       relatedTo: [
