@@ -5,7 +5,23 @@ const API_KYLAS = "https://api.kylas.io/v1";
 const PARTNER_API_KEY = process.env.WAPIY_PARTNER_API_KEY;
 
 // **1. Fetch Lead Details from Kylas**
-
+const getSenderPhoneNumber = async (projectId) => {
+  try {
+    const response = await axios.get(
+      `${API_WAPIY}/project-apis/v1/project/${projectId}`,
+      {
+        headers: { "X-Partner-API-Key": PARTNER_API_KEY },
+      }
+    );
+    return response.data.wa_number || null;
+  } catch (error) {
+    console.error(
+      "❌ Error fetching sender phone number:",
+      error.response?.data || error.message
+    );
+    return null;
+  }
+};
 const getProjectId = async (userId) => {
   const user = await User.findOne({ kylasUserId: userId });
   if (!user || !user.projectId) {
