@@ -75,48 +75,6 @@ const getTemplateTextFromRedington = async (projectId, waTemplateId) => {
 };
 
 /**
- * Function to refresh the Kylas access token
- */
-const refreshAccessToken = async (user) => {
-  try {
-    console.log(`🔄 Refreshing access token for user ${user.kylasUserId}`);
-
-    const response = await axios.post(
-      "https://api.kylas.io/oauth/token",
-      new URLSearchParams({
-        grant_type: "refresh_token",
-        refresh_token: user.kylasRefreshToken,
-        client_id: process.env.KYLAS_CLIENT_ID, // Set this in .env
-        client_secret: process.env.KYLAS_CLIENT_SECRET, // Set this in .env
-      }).toString(),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
-
-    const { access_token, refresh_token, expires_in } = response.data;
-
-    // Update the user's access token in the database
-    user.kylasAccessToken = access_token;
-    user.kylasRefreshToken = refresh_token; // Store the new refresh token
-    user.expiresAt = new Date(Date.now() + expires_in * 1000); // Calculate new expiry time
-    await user.save();
-
-    console.log(`✅ New access token saved for user ${user.kylasUserId}`);
-
-    return access_token;
-  } catch (error) {
-    console.error(
-      "❌ Failed to refresh access token:",
-      error.response?.data || error.message
-    );
-    throw new Error("Failed to refresh access token");
-  }
-};
-
-/**
  * Function to fetch lead details
  */
 exports.getLeadDetails = async (req, res) => {
@@ -131,17 +89,6 @@ exports.getLeadDetails = async (req, res) => {
     }
 
     let kylasAccessToken = user.kylasAccessToken;
-
-    // Check if the token is expired
-    if (!user.expiresAt || new Date() >= user.expiresAt) {
-      try {
-        kylasAccessToken = await refreshAccessToken(user); // Refresh token if expired
-      } catch (refreshError) {
-        return res
-          .status(401)
-          .json({ error: "Authentication failed. Please reconnect Kylas." });
-      }
-    }
 
     // Fetch lead details
     const response = await axios.get(`${API_KYLAS}/leads/${leadId}`, {

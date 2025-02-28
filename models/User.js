@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema({
   kylasAccessToken: String,
   kylasRefreshToken: String,
   expiresAt: Date,
+  refreshTokenExpiresAt: Date,
   email: String,
   businessId: String,
   projectId: String,

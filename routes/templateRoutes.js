@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
 const Template = require("../models/Template");
-
-router.post("/save-template", async (req, res) => {
+const checkKylasAuth = require("../middleware/kylastokenMiddleware");
+router.post("/save-template", checkKylasAuth, async (req, res) => {
   try {
     const { userId, template } = req.body;
     console.log("template in request: ", JSON.stringify(template, null, 2));
@@ -74,7 +74,7 @@ router.post("/save-template", async (req, res) => {
   }
 });
 
-router.delete("/delete-template", async (req, res) => {
+router.delete("/delete-template", checkKylasAuth, async (req, res) => {
   try {
     const { userId, templateName } = req.body;
 
@@ -124,7 +124,7 @@ router.delete("/delete-template", async (req, res) => {
 });
 
 // 📌 Get Templates (Retrieve templates for a specific user)
-router.get("/get-templates", async (req, res) => {
+router.get("/get-templates", checkKylasAuth, async (req, res) => {
   try {
     const { userId } = req.query;
 

@@ -28,7 +28,9 @@ exports.kylasCallback = async (req, res) => {
     const { access_token, refresh_token, expires_in } = response.data;
     console.log("got the access token: ", access_token);
     const expiresAt = new Date(Date.now() + expires_in * 1000);
-
+    const refreshTokenExpiresAt = new Date(
+      Date.now() + 90 * 24 * 60 * 60 * 1000
+    ); // 90 days
     const kylasUser = await axios.get("https://api.kylas.io/v1/users/me", {
       headers: { Authorization: `Bearer ${access_token}` },
     });
@@ -44,6 +46,7 @@ exports.kylasCallback = async (req, res) => {
         kylasRefreshToken: refresh_token,
         expiresAt,
         verified: false,
+        refreshTokenExpiresAt,
       },
       { upsert: true, new: true }
     );
