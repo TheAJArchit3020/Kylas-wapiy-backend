@@ -13,6 +13,7 @@ const getSenderPhoneNumber = async (projectId) => {
         headers: { "X-Partner-API-Key": PARTNER_API_KEY },
       }
     );
+    console.log("sender Phone Number: ", response.data.wa_number);
     return response.data.wa_number || null;
   } catch (error) {
     console.error(
@@ -39,7 +40,9 @@ const getTemplateIdFromRedington = async (projectId, templateName) => {
     );
 
     const templates = response.data || [];
+    console.log("redington template List: ", templates);
     const template = templates.find((t) => t.name === templateName);
+    console.log("redington Template Object:", template);
     return template ? template.id : null;
   } catch (error) {
     console.error(
@@ -58,7 +61,7 @@ const getTemplateTextFromRedington = async (projectId, waTemplateId) => {
         headers: { "X-Partner-API-Key": PARTNER_API_KEY },
       }
     );
-
+    console.log("template text redington: ", response.data.text);
     return response.data.text || null;
   } catch (error) {
     console.error(
@@ -439,7 +442,7 @@ exports.sendTemplateMessage = async (req, res) => {
     );
 
     console.log("✅ Template message sent successfully!");
-
+    console.log("Message COntent: ", messageContent);
     // Log the template message in Kylas CRM with attachments
     await logMessageInKylas({
       userId,
