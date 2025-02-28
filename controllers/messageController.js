@@ -316,16 +316,33 @@ const logMessageInKylas = async ({
 // **2. Send Normal Message**
 exports.sendMessage = async (req, res) => {
   try {
-    const { userId, to, message } = req.body;
+    const { userId, to, message, leadId, imageUrl } = req.body;
 
     // Get project ID from the user database
     const projectId = await getProjectId(userId);
 
+    // Fetch sender phone number for the project
+    const senderNumber = await getSenderPhoneNumber(projectId);
+    if (!senderNumber)
+      return res
+        .status(500)
+        .json({ error: "Failed to fetch sender phone number" });
+
+    // Prepare the payload for WhatsApp API
     const payload = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
       to,
-      type: "text",
-      text: { body: message },
+      type: imageUrl ? "image" : "text",
+      ...(imageUrl
+        ? { image: { link: imageUrl } } // Attach image if provided
+        : { text: { body: message } }), // Otherwise, send text
     };
+
+    console.log(
+      "🚀 Sending Normal WhatsApp Message:",
+      JSON.stringify(payload, null, 2)
+    );
 
     await axios.post(
       `${API_WAPIY}/project-apis/v1/project/${projectId}/messages`,
@@ -335,20 +352,29 @@ exports.sendMessage = async (req, res) => {
           Accept: "application/json",
           "Content-Type": "application/json",
           "X-Partner-API-Key": PARTNER_API_KEY,
+          "X-Project-API-Pwd": PROJECT_API_PWD,
         },
       }
     );
+
+    console.log("✅ Normal message sent successfully!");
+
+    // Log the message in Kylas CRM
     await logMessageInKylas({
       userId,
       leadId,
       messageContent: message,
       senderNumber,
       recipientNumber: to,
+      attachments: imageUrl
+        ? [{ fileName: "uploaded_image.jpg", url: imageUrl }]
+        : [],
     });
+
     res.json({ message: "Message sent successfully!" });
   } catch (error) {
     console.error(
-      "Error sending message:",
+      "❌ Error sending message:",
       error.response?.data || error.message
     );
     res.status(500).json({ error: "Failed to send message." });
