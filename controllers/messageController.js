@@ -256,6 +256,7 @@ const logMessageInKylas = async ({
     // Use the current Kylas Access Token
     let kylasAccessToken = user.kylasAccessToken;
     // Prepare message log payload with proper data types
+    console.log(kylasAccessToken);
     const payload = {
       content: messageContent,
       medium: "whatsapp",
