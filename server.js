@@ -13,7 +13,8 @@ app.use("/api", require("./routes/otpRoutes"));
 app.use("/api", require("./routes/messageRoutes"));
 const projectRoutes = require("./routes/projectRoutes");
 app.use("/api", projectRoutes);
-
+const webhookRoutes = require("./routes/webhookRoutes");
+app.use("/api", webhookRoutes);
 const templateRoutes = require("./routes/templateRoutes");
 app.use("/api", templateRoutes);
 app.listen(3000, () => console.log("✅ Server running on port 3000"));

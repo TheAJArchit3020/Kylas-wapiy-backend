@@ -1,0 +1,47 @@
+const express = require("express");
+const axios = require("axios");
+const User = require("../models/User"); // User Schema for MongoDB
+const router = express.Router();
+
+router.post("/api/webhook/redington", (req, res) => {
+  const signature = req.headers["x-signature"]; // Get signature from headers
+  const projectId = req.headers["x-project-id"]; // Identify the project
+  const payload = JSON.stringify(req.body);
+  console.log(JSON.stringify(payload));
+
+  // Verify the authenticity of the request
+  const expectedSignature = crypto
+    .createHmac("sha256", SECRET_KEY)
+    .update(payload)
+    .digest("hex");
+
+  if (signature !== expectedSignature) {
+    console.error("⚠️ Unauthorized webhook request - Invalid signature");
+    return res.status(401).send("Unauthorized");
+  }
+
+  console.log("✅ Webhook received:", req.body);
+
+  const { topic, data } = req.body;
+
+  // Handle different webhook events
+  switch (topic) {
+    case "message.sender.user":
+      console.log("📩 User sent a message to the business:", data);
+      break;
+
+    case "message.created":
+      console.log("📨 New message created:", data);
+      break;
+
+    case "contact.created":
+      console.log("👤 New contact created:", data);
+      break;
+
+    default:
+      console.log("ℹ️ Unknown webhook topic:", topic);
+  }
+
+  res.sendStatus(200); // Acknowledge receipt
+});
+module.exports = router;
