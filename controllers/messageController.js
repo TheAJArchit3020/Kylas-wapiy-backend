@@ -179,6 +179,69 @@ exports.checkOrCreateContact = async (req, res) => {
   }
 };
 
+const logMessageInKylas = async ({
+  userId,
+  leadId,
+  messageContent,
+  senderNumber,
+  recipientNumber,
+  attachments = [],
+}) => {
+  try {
+    const user = await User.findOne({ kylasUserId: userId });
+
+    if (!user) throw new Error("User not found");
+
+    // Use the current Kylas Access Token
+    let kylasAccessToken = user.kylasAccessToken;
+
+    // Prepare message log payload
+    const payload = {
+      content: messageContent,
+      medium: "whatsapp",
+      senderNumber,
+      recipientNumber,
+      direction: "outgoing",
+      sentAt: new Date().toISOString(),
+      status: "sent",
+      recipients: [
+        {
+          entity: "lead",
+          id: leadId,
+          name: "Lead", // Name can be fetched dynamically if needed
+          phoneNumber: recipientNumber,
+        },
+      ],
+      relatedTo: [
+        {
+          entity: "lead",
+          id: leadId,
+          name: "Lead",
+        },
+      ],
+      attachments,
+    };
+
+    console.log(
+      "📨 Logging message in Kylas:",
+      JSON.stringify(payload, null, 2)
+    );
+
+    await axios.post(`${API_KYLAS}/messages`, payload, {
+      headers: {
+        Authorization: `Bearer ${kylasAccessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    console.log("✅ Message logged in Kylas CRM");
+  } catch (error) {
+    console.error(
+      "❌ Error logging message in Kylas:",
+      error.response?.data || error.message
+    );
+  }
+};
 // **2. Send Normal Message**
 exports.sendMessage = async (req, res) => {
   try {
@@ -204,7 +267,13 @@ exports.sendMessage = async (req, res) => {
         },
       }
     );
-
+    await logMessageInKylas({
+      userId,
+      leadId,
+      messageContent: message,
+      senderNumber,
+      recipientNumber: to,
+    });
     res.json({ message: "Message sent successfully!" });
   } catch (error) {
     console.error(
@@ -217,16 +286,14 @@ exports.sendMessage = async (req, res) => {
 
 exports.sendTemplateMessage = async (req, res) => {
   try {
-    const { userId, to, template, leadId } = req.body;
+    const { userId, to, template, leadId, senderNumber } = req.body;
 
-    // Get project ID from the user database
+    // Get project ID
     const projectId = await getProjectId(userId);
 
     // Find user in DB
     const user = await User.findOne({ kylasUserId: userId });
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     // Fetch lead details from Kylas API
     const kylasAccessToken = user.kylasAccessToken;
@@ -246,7 +313,10 @@ exports.sendTemplateMessage = async (req, res) => {
     // Remove unwanted `type` field inside the template object
     delete sanitizedTemplate.type;
 
-    // Replace placeholders dynamically
+    let messageContent = "";
+    let attachments = [];
+
+    // Replace placeholders dynamically in components
     sanitizedTemplate.components.forEach((component) => {
       if (component.parameters) {
         component.parameters = component.parameters.map((param) => {
@@ -255,15 +325,28 @@ exports.sendTemplateMessage = async (req, res) => {
           if (param.type === "text") {
             formattedParam.text =
               param.text === "lead_name" ? leadName : companyName;
+            messageContent += ` ${formattedParam.text}`; // Construct message for Kylas
           } else if (param.type === "image") {
             formattedParam.image = { link: param.image?.link };
+            attachments.push({
+              fileName: "image.jpg",
+              url: param.image?.link,
+            });
           } else if (param.type === "video") {
             formattedParam.video = { link: param.video?.link };
+            attachments.push({
+              fileName: "video.mp4",
+              url: param.video?.link,
+            });
           } else if (param.type === "document") {
             formattedParam.document = {
               link: param.document?.link,
               filename: param.document?.filename || "document.pdf",
             };
+            attachments.push({
+              fileName: param.document?.filename || "document.pdf",
+              url: param.document?.link,
+            });
           }
 
           return formattedParam;
@@ -271,14 +354,17 @@ exports.sendTemplateMessage = async (req, res) => {
       }
     });
 
-    // Prepare final payload
+    // Prepare final payload for WhatsApp API
     const payload = {
       to,
       type: "template",
       template: sanitizedTemplate,
     };
 
-    console.log("Final Payload:", JSON.stringify(payload, null, 2));
+    console.log(
+      "🚀 Sending Template WhatsApp Message:",
+      JSON.stringify(payload, null, 2)
+    );
 
     // Send template message to WhatsApp API
     await axios.post(
@@ -293,10 +379,22 @@ exports.sendTemplateMessage = async (req, res) => {
       }
     );
 
+    console.log("✅ Template message sent successfully!");
+
+    // Log the template message in Kylas CRM with attachments
+    await logMessageInKylas({
+      userId,
+      leadId,
+      messageContent,
+      senderNumber,
+      recipientNumber: to,
+      attachments,
+    });
+
     res.json({ message: "Template message sent successfully!" });
   } catch (error) {
     console.error(
-      "Error sending template message:",
+      "❌ Error sending template message:",
       error.response?.data || error.message
     );
     res.status(500).json({ error: "Failed to send template message." });
