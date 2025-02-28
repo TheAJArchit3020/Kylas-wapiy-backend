@@ -381,9 +381,9 @@ exports.sendTemplateMessage = async (req, res) => {
     });
 
     const leadData = leadResponse.data;
-    const leadName = `${leadData.firstName || ""} ${
-      leadData.lastName || ""
-    }`.trim();
+    const leadName = leadData.firstName
+      ? `${leadData.firstName} ${leadData.lastName || ""}`.trim()
+      : "Customer"; // Fallback to "Customer" if name is missing
     const companyName = leadData.companyName || "N/A";
 
     // Clone the template object to avoid modifying the original
@@ -397,20 +397,28 @@ exports.sendTemplateMessage = async (req, res) => {
     sanitizedTemplate.components.forEach((component) => {
       if (component.parameters) {
         component.parameters.forEach((param, index) => {
+          const formattedParam = { type: param.type };
+
           if (param.type === "text") {
-            const value = param.text === "lead_name" ? leadName : companyName;
-            parameterValues.push(value);
-          } else if (param.type === "image") {
-            attachments.push({ fileName: "image.jpg", url: param.image?.link });
-          } else if (param.type === "video") {
-            attachments.push({ fileName: "video.mp4", url: param.video?.link });
-          } else if (param.type === "document") {
+            formattedParam.text =
+              param.text === "lead_name" ? leadName : companyName;
+            parameterValues.push(formattedParam.text);
+          } else if (param.type === "image" && param.image?.link) {
+            attachments.push({ fileName: "image.jpg", url: param.image.link });
+          } else if (param.type === "video" && param.video?.link) {
+            attachments.push({ fileName: "video.mp4", url: param.video.link });
+          } else if (param.type === "document" && param.document?.link) {
             attachments.push({
-              fileName: param.document?.filename || "document.pdf",
-              url: param.document?.link,
+              fileName: param.document.filename || "document.pdf",
+              url: param.document.link,
             });
           }
         });
+
+        // Remove fallback_value to prevent API error
+        component.parameters = component.parameters.map(
+          ({ fallback_value, ...param }) => param
+        );
       }
     });
 
@@ -444,7 +452,8 @@ exports.sendTemplateMessage = async (req, res) => {
     );
 
     console.log("✅ Template message sent successfully!");
-    console.log("Message COntent: ", messageContent);
+    console.log("Message Content: ", messageContent);
+
     // Log the template message in Kylas CRM with attachments
     await logMessageInKylas({
       userId,
