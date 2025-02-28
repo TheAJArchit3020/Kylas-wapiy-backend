@@ -384,6 +384,7 @@ exports.sendTemplateMessage = async (req, res) => {
             // Replace lead_name or company_name
             if (param.text === "lead_name") {
               formattedParam.text = leadName;
+              param.text = leadName;
             } else if (param.text === "company_name") {
               formattedParam.text = companyName;
             } else {
