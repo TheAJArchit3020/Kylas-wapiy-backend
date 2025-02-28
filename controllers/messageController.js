@@ -330,7 +330,6 @@ exports.sendMessage = async (req, res) => {
 
     // Prepare the payload for WhatsApp API
     const payload = {
-      messaging_product: "whatsapp",
       recipient_type: "individual",
       to,
       type: imageUrl ? "image" : "text",
