@@ -255,11 +255,11 @@ const logMessageInKylas = async ({
 
     // Use the current Kylas Access Token
     let kylasAccessToken = user.kylasAccessToken;
-
     // Prepare message log payload with proper data types
     const payload = {
       content: messageContent,
       medium: "whatsapp",
+      ownerId: userId,
       senderNumber: Number(senderNumber), // Ensures it's a number
       recipientNumber: Number(recipientNumber), // Ensures it's a number
       direction: "outgoing",
