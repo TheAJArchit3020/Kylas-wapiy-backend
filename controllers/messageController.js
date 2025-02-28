@@ -259,7 +259,7 @@ const logMessageInKylas = async ({
     console.log(kylasAccessToken);
     const payload = {
       content: messageContent,
-      medium: "whatsapp",
+      messageType: "whatsapp",
       ownerId: userId,
       senderNumber: Number(senderNumber), // Ensures it's a number
       recipientNumber: Number(recipientNumber), // Ensures it's a number
@@ -279,6 +279,7 @@ const logMessageInKylas = async ({
           entity: "lead",
           id: Number(leadId), // Ensures it's a number
           name: recipientName || "test", // Uses provided name or defaults to "test"
+          phoneNumber: Number(recipientNumber),
         },
       ],
       attachments,
