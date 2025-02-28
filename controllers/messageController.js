@@ -290,7 +290,7 @@ const logMessageInKylas = async ({
     try {
       await axios.post(`${API_KYLAS}/messages`, payload, {
         headers: {
-          Authorization: `Bearer ${kylasAccessToken}`,
+          "api-key": "3f25b54d-2171-4fd8-a2d5-2617b5a0bbd6:17713",
           "Content-Type": "application/json",
         },
       });
