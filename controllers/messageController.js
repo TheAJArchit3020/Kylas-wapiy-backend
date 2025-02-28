@@ -256,28 +256,28 @@ const logMessageInKylas = async ({
     // Use the current Kylas Access Token
     let kylasAccessToken = user.kylasAccessToken;
 
-    // Prepare message log payload
+    // Prepare message log payload with proper data types
     const payload = {
       content: messageContent,
       medium: "whatsapp",
-      senderNumber,
-      recipientNumber,
+      senderNumber: Number(senderNumber), // Ensures it's a number
+      recipientNumber: Number(recipientNumber), // Ensures it's a number
       direction: "outgoing",
       sentAt: new Date().toISOString(),
       status: "sent",
       recipients: [
         {
           entity: "lead",
-          id: leadId,
-          phoneNumber: recipientNumber,
-          name: "test",
+          id: Number(leadId), // Ensures it's a number
+          phoneNumber: Number(recipientNumber), // Ensures it's a number
+          name: recipientName || "test", // Uses provided name or defaults to "test"
         },
       ],
       relatedTo: [
         {
           entity: "lead",
-          id: leadId,
-          name: "Lead",
+          id: Number(leadId), // Ensures it's a number
+          name: recipientName || "test", // Uses provided name or defaults to "test"
         },
       ],
       attachments,
@@ -287,15 +287,19 @@ const logMessageInKylas = async ({
       "📨 Logging message in Kylas:",
       JSON.stringify(payload, null, 2)
     );
+
     try {
       await axios.post(`${API_KYLAS}/messages`, payload, {
         headers: {
-          "api-key": "3f25b54d-2171-4fd8-a2d5-2617b5a0bbd6:17713",
+          Authorization: `Bearer ${kylasAccessToken}`,
           "Content-Type": "application/json",
         },
       });
     } catch (error) {
-      console.error("Error while logging in kylas", error);
+      console.error(
+        "❌ Error while logging in Kylas",
+        error.response?.data || error.message
+      );
     }
 
     console.log("✅ Message logged in Kylas CRM");
@@ -306,6 +310,7 @@ const logMessageInKylas = async ({
     );
   }
 };
+
 // **2. Send Normal Message**
 exports.sendMessage = async (req, res) => {
   try {
