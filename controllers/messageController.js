@@ -329,6 +329,8 @@ exports.sendMessage = async (req, res) => {
 exports.sendTemplateMessage = async (req, res) => {
   try {
     const { userId, to, template, leadId } = req.body;
+
+    // Fetch user details
     const user = await User.findOne({ kylasUserId: userId });
     if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -361,9 +363,9 @@ exports.sendTemplateMessage = async (req, res) => {
     });
 
     const leadData = leadResponse.data;
-    const leadName = leadData.firstName
-      ? `${leadData.firstName} ${leadData.lastName || ""}`.trim()
-      : "Customer"; // Fallback to "Customer" if name is missing
+    const leadName =
+      `${leadData.firstName || ""} ${leadData.lastName || ""}`.trim() ||
+      "Customer"; // Default to "Customer" if missing
     const companyName = leadData.companyName || "N/A";
 
     // Clone the template object to avoid modifying the original
@@ -380,8 +382,15 @@ exports.sendTemplateMessage = async (req, res) => {
           const formattedParam = { type: param.type };
 
           if (param.type === "text") {
-            formattedParam.text =
-              param.text === "lead_name" ? leadName : companyName;
+            // Replace lead_name or company_name
+            if (param.text === "lead_name") {
+              formattedParam.text = leadName;
+            } else if (param.text === "company_name") {
+              formattedParam.text = companyName;
+            } else {
+              formattedParam.text = param.text;
+            }
+
             parameterValues.push(formattedParam.text);
           } else if (param.type === "image" && param.image?.link) {
             attachments.push({ fileName: "image.jpg", url: param.image.link });
@@ -402,7 +411,7 @@ exports.sendTemplateMessage = async (req, res) => {
       }
     });
 
-    // Replace placeholders {{1}}, {{2}}, etc. in the message text
+    // Replace placeholders {{1}}, {{2}}, etc., in the message text with actual values
     messageContent = messageContent.replace(/{{(\d+)}}/g, (match, number) => {
       return parameterValues[number - 1] || match;
     });
