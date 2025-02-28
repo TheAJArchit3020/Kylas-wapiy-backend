@@ -13,9 +13,6 @@ const getProjectId = async (userId) => {
   }
   return user.projectId;
 };
-const axios = require("axios");
-const User = require("../models/User");
-const API_KYLAS = "https://api.kylas.io/v1";
 
 /**
  * Function to refresh the Kylas access token
