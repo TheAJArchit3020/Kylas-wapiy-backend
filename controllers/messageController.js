@@ -367,14 +367,13 @@ exports.sendTemplateMessage = async (req, res) => {
       `${leadData.firstName || ""} ${leadData.lastName || ""}`.trim() ||
       "Customer"; // Default to "Customer" if missing
     const companyName = leadData.companyName || "N/A";
-
+    console.log(leadName);
     // Clone the template object to avoid modifying the original
     const sanitizedTemplate = JSON.parse(JSON.stringify(template));
     delete sanitizedTemplate.type;
 
     let attachments = [];
     let parameterValues = [];
-
     // Replace placeholders dynamically in components
     sanitizedTemplate.components.forEach((component) => {
       if (component.parameters) {
@@ -410,7 +409,7 @@ exports.sendTemplateMessage = async (req, res) => {
         );
       }
     });
-
+    console.log(JSON.stringify(sanitizedTemplate, null, 2));
     // Replace placeholders {{1}}, {{2}}, etc., in the message text with actual values
     messageContent = messageContent.replace(/{{(\d+)}}/g, (match, number) => {
       return parameterValues[number - 1] || match;
