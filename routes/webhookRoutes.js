@@ -2,7 +2,8 @@ const express = require("express");
 const axios = require("axios");
 const User = require("../models/User"); // User Schema for MongoDB
 const router = express.Router();
-
+const SECRET_KEY =
+  "06c56c0dc5225ecb346900570700cf9f6013f00b3da0490873f5f923c774d459";
 router.post("/api/webhook/redington", (req, res) => {
   const signature = req.headers["x-signature"]; // Get signature from headers
   const projectId = req.headers["x-project-id"]; // Identify the project
