@@ -13,6 +13,45 @@ const getProjectId = async (userId) => {
   }
   return user.projectId;
 };
+const getTemplateIdFromRedington = async (projectId, templateName) => {
+  try {
+    const response = await axios.get(
+      `${API_WAPIY}/project-apis/v1/project/${projectId}/wa_template/`,
+      {
+        headers: { "X-Partner-API-Key": PARTNER_API_KEY },
+      }
+    );
+
+    const templates = response.data || [];
+    const template = templates.find((t) => t.name === templateName);
+    return template ? template.id : null;
+  } catch (error) {
+    console.error(
+      "❌ Error fetching WA templates:",
+      error.response?.data || error.message
+    );
+    return null;
+  }
+};
+
+const getTemplateTextFromRedington = async (projectId, waTemplateId) => {
+  try {
+    const response = await axios.get(
+      `${API_WAPIY}/project-apis/v1/project/${projectId}/wa_template/${waTemplateId}`,
+      {
+        headers: { "X-Partner-API-Key": PARTNER_API_KEY },
+      }
+    );
+
+    return response.data.text || null;
+  } catch (error) {
+    console.error(
+      "❌ Error fetching WA template details:",
+      error.response?.data || error.message
+    );
+    return null;
+  }
+};
 
 /**
  * Function to refresh the Kylas access token
@@ -208,7 +247,6 @@ const logMessageInKylas = async ({
         {
           entity: "lead",
           id: leadId,
-          name: "Lead", // Name can be fetched dynamically if needed
           phoneNumber: recipientNumber,
         },
       ],
@@ -226,13 +264,16 @@ const logMessageInKylas = async ({
       "📨 Logging message in Kylas:",
       JSON.stringify(payload, null, 2)
     );
-
-    await axios.post(`${API_KYLAS}/messages`, payload, {
-      headers: {
-        Authorization: `Bearer ${kylasAccessToken}`,
-        "Content-Type": "application/json",
-      },
-    });
+    try {
+      await axios.post(`${API_KYLAS}/messages`, payload, {
+        headers: {
+          Authorization: `Bearer ${kylasAccessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      console.error("Error while logging in kylas", error);
+    }
 
     console.log("✅ Message logged in Kylas CRM");
   } catch (error) {
@@ -286,19 +327,36 @@ exports.sendMessage = async (req, res) => {
 
 exports.sendTemplateMessage = async (req, res) => {
   try {
-    const { userId, to, template, leadId, senderNumber } = req.body;
-
-    // Get project ID
-    const projectId = await getProjectId(userId);
-
-    // Find user in DB
+    const { userId, to, template, leadId } = req.body;
     const user = await User.findOne({ kylasUserId: userId });
     if (!user) return res.status(404).json({ error: "User not found" });
 
+    const projectId = user.projectId;
+    const senderNumber = await getSenderPhoneNumber(projectId);
+    if (!senderNumber)
+      return res
+        .status(500)
+        .json({ error: "Failed to fetch sender phone number" });
+
+    // Fetch the WhatsApp template ID from Redington
+    const waTemplateId = await getTemplateIdFromRedington(
+      projectId,
+      template.name
+    );
+    if (!waTemplateId)
+      return res.status(404).json({ error: "WhatsApp template not found" });
+
+    // Fetch the actual template text from Redington
+    let messageContent = await getTemplateTextFromRedington(
+      projectId,
+      waTemplateId
+    );
+    if (!messageContent)
+      return res.status(500).json({ error: "Failed to fetch template text" });
+
     // Fetch lead details from Kylas API
-    const kylasAccessToken = user.kylasAccessToken;
     const leadResponse = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
-      headers: { Authorization: `Bearer ${kylasAccessToken}` },
+      headers: { Authorization: `Bearer ${user.kylasAccessToken}` },
     });
 
     const leadData = leadResponse.data;
@@ -309,49 +367,35 @@ exports.sendTemplateMessage = async (req, res) => {
 
     // Clone the template object to avoid modifying the original
     const sanitizedTemplate = JSON.parse(JSON.stringify(template));
-
-    // Remove unwanted `type` field inside the template object
     delete sanitizedTemplate.type;
 
-    let messageContent = "";
     let attachments = [];
+    let parameterValues = [];
 
     // Replace placeholders dynamically in components
     sanitizedTemplate.components.forEach((component) => {
       if (component.parameters) {
-        component.parameters = component.parameters.map((param) => {
-          const formattedParam = { type: param.type };
-
+        component.parameters.forEach((param, index) => {
           if (param.type === "text") {
-            formattedParam.text =
-              param.text === "lead_name" ? leadName : companyName;
-            messageContent += ` ${formattedParam.text}`; // Construct message for Kylas
+            const value = param.text === "lead_name" ? leadName : companyName;
+            parameterValues.push(value);
           } else if (param.type === "image") {
-            formattedParam.image = { link: param.image?.link };
-            attachments.push({
-              fileName: "image.jpg",
-              url: param.image?.link,
-            });
+            attachments.push({ fileName: "image.jpg", url: param.image?.link });
           } else if (param.type === "video") {
-            formattedParam.video = { link: param.video?.link };
-            attachments.push({
-              fileName: "video.mp4",
-              url: param.video?.link,
-            });
+            attachments.push({ fileName: "video.mp4", url: param.video?.link });
           } else if (param.type === "document") {
-            formattedParam.document = {
-              link: param.document?.link,
-              filename: param.document?.filename || "document.pdf",
-            };
             attachments.push({
               fileName: param.document?.filename || "document.pdf",
               url: param.document?.link,
             });
           }
-
-          return formattedParam;
         });
       }
+    });
+
+    // Replace placeholders {{1}}, {{2}}, etc. in the message text
+    messageContent = messageContent.replace(/{{(\d+)}}/g, (match, number) => {
+      return parameterValues[number - 1] || match;
     });
 
     // Prepare final payload for WhatsApp API
@@ -366,7 +410,6 @@ exports.sendTemplateMessage = async (req, res) => {
       JSON.stringify(payload, null, 2)
     );
 
-    // Send template message to WhatsApp API
     await axios.post(
       `${API_WAPIY}/project-apis/v1/project/${projectId}/messages`,
       payload,
