@@ -9,7 +9,7 @@ const {
 const checkKylasAuth = require("../middleware/kylastokenMiddleware");
 const router = express.Router();
 
-router.get("/lead-details/:leadId/:userId", checkKylasAuth, getLeadDetails); // Fetch lead phone numbers
+router.get("/lead-details/:leadId/:userId", getLeadDetails); // Fetch lead phone numbers
 router.post("/check-or-create-contact", checkKylasAuth, checkOrCreateContact); // Check contact in Wapiy
 router.post("/send-message", checkKylasAuth, sendMessage);
 router.post("/send-template-message", checkKylasAuth, sendTemplateMessage);

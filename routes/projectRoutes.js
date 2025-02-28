@@ -4,7 +4,7 @@ const User = require("../models/User"); // User Schema for MongoDB
 const router = express.Router();
 const checkKylasAuth = require("../middleware/kylastokenMiddleware");
 // 📌 Route: Get Projects for a Kylas User
-router.get("/get-projects", checkKylasAuth, async (req, res) => {
+router.get("/get-projects", async (req, res) => {
   try {
     const { userId } = req.query;
     if (!userId) return res.status(400).send("Kylas User ID is required.");
