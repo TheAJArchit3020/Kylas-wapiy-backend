@@ -6,7 +6,7 @@ const Template = require("../models/Template");
 router.post("/save-template", async (req, res) => {
   try {
     const { userId, template } = req.body;
-
+    console.log("template in request: ", JSON.stringify(template, null, 2));
     if (!userId || !template) {
       return res
         .status(400)
@@ -53,10 +53,18 @@ router.post("/save-template", async (req, res) => {
         });
       }
     });
-
+    console.log(
+      "template after sanitization: ",
+      JSON.stringify(sanitizedTemplate, null, 2)
+    );
+    try {
+      userTemplate.templates.push(sanitizedTemplate);
+      await userTemplate.save();
+    } catch (error) {
+      console.error("error while saving template: ", error.message);
+      console.error("error while saving template: ", error);
+    }
     // Save the sanitized template
-    userTemplate.templates.push(sanitizedTemplate);
-    await userTemplate.save();
 
     console.log(`Template saved for user ${user.kylasUserId}`);
     res.status(200).json({ message: "Template saved successfully" });
