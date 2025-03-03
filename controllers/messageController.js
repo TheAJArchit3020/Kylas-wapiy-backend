@@ -84,8 +84,10 @@ exports.getLeadDetails = async (req, res) => {
     // Find user in the database
     let user = await User.findOne({ kylasUserId: userId });
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
+    if (!user || !user.projectId) {
+      throw new Error(
+        "Project ID not found for this user. Please connect a project in view details page of the app"
+      );
     }
 
     let kylasAccessToken = user.kylasAccessToken;
@@ -128,7 +130,12 @@ exports.getLeadDetails = async (req, res) => {
 exports.checkOrCreateContact = async (req, res) => {
   try {
     const { userId, phoneNumber, name } = req.body; // Accept name in request body
-
+    const user = await User.findOne({ kylasUserId: userId });
+    if (!user || !user.projectId) {
+      throw new Error(
+        "Project ID not found for this user. Please connect a project in view details page of the app"
+      );
+    }
     // Get project ID from the user database
     const projectId = await getProjectId(userId);
 
