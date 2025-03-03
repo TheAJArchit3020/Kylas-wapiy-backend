@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const SECRET_KEY =
   "06c56c0dc5225ecb346900570700cf9f6013f00b3da0490873f5f923c774d459";
 router.post("/webhook/redington", (req, res) => {
+  console.log("got webhook event");
   const signature = req.headers["x-signature"]; // Get signature from headers
   const projectId = req.headers["x-project-id"]; // Identify the project
   const payload = JSON.stringify(req.body);
