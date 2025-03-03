@@ -264,7 +264,12 @@ const logMessageInKylas = async ({
 exports.sendMessage = async (req, res) => {
   try {
     const { userId, to, message, leadId, imageUrl } = req.body;
-
+    const user = await User.findOne({ kylasUserId: userId });
+    if (!user || !user.projectId) {
+      throw new Error(
+        "Project ID not found for this user. Please connect a project in view details page of the app"
+      );
+    }
     // Get project ID from the user database
     const projectId = await getProjectId(userId);
 
@@ -333,7 +338,11 @@ exports.sendTemplateMessage = async (req, res) => {
     // Fetch user details
     const user = await User.findOne({ kylasUserId: userId });
     if (!user) return res.status(404).json({ error: "User not found" });
-
+    if (!user.projectId)
+      return res.status(404).json({
+        error:
+          "Project not found, Please connect a project in details page of the app",
+      });
     const projectId = user.projectId;
     const senderNumber = await getSenderPhoneNumber(projectId);
     if (!senderNumber)
