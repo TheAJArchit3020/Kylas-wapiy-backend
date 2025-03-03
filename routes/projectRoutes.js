@@ -75,4 +75,30 @@ router.post("/connect-project", checkKylasAuth, async (req, res) => {
   }
 });
 
+router.post("/disconnect-project", checkKylasAuth, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).send("User ID is required.");
+
+    // Find the user and remove the projectId field
+    const user = await User.findOneAndUpdate(
+      { kylasUserId: userId },
+      { $unset: { projectId: "" } }, // Removes the projectId field
+      { new: true }
+    );
+
+    if (!user) return res.status(404).send("User not found.");
+
+    console.log(`User ${userId} disconnected from project.`);
+
+    res.status(200).json({ message: "Project disconnected successfully!" });
+  } catch (error) {
+    console.error(
+      "Error disconnecting project:",
+      error.response?.data || error.message
+    );
+    res.status(500).send("Failed to disconnect project.");
+  }
+});
+
 module.exports = router;
