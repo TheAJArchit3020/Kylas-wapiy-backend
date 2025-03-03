@@ -85,9 +85,10 @@ exports.getLeadDetails = async (req, res) => {
     let user = await User.findOne({ kylasUserId: userId });
 
     if (!user || !user.projectId) {
-      throw new Error(
-        "Project ID not found for this user. Please connect a project in view details page of the app"
-      );
+      return res.status(404).json({
+        error:
+          "Project not found, Please connect a project in details page of the app",
+      });
     }
 
     let kylasAccessToken = user.kylasAccessToken;
@@ -132,9 +133,10 @@ exports.checkOrCreateContact = async (req, res) => {
     const { userId, phoneNumber, name } = req.body; // Accept name in request body
     const user = await User.findOne({ kylasUserId: userId });
     if (!user || !user.projectId) {
-      throw new Error(
-        "Project ID not found for this user. Please connect a project in view details page of the app"
-      );
+      return res.status(404).json({
+        error:
+          "Project not found, Please connect a project in details page of the app",
+      });
     }
     // Get project ID from the user database
     const projectId = await getProjectId(userId);
@@ -273,9 +275,10 @@ exports.sendMessage = async (req, res) => {
     const { userId, to, message, leadId, imageUrl } = req.body;
     const user = await User.findOne({ kylasUserId: userId });
     if (!user || !user.projectId) {
-      throw new Error(
-        "Project ID not found for this user. Please connect a project in view details page of the app"
-      );
+      return res.status(404).json({
+        error:
+          "Project not found, Please connect a project in details page of the app",
+      });
     }
     // Get project ID from the user database
     const projectId = await getProjectId(userId);
