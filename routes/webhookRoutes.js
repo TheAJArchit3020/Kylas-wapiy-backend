@@ -18,11 +18,6 @@ router.post("/webhook/redington", (req, res) => {
     .update(payload)
     .digest("hex");
 
-  if (signature !== expectedSignature) {
-    console.error("⚠️ Unauthorized webhook request - Invalid signature");
-    return res.status(401).send("Unauthorized");
-  }
-
   console.log("✅ Webhook received:", req.body);
 
   const { topic, data } = req.body;

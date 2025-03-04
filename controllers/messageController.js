@@ -80,7 +80,7 @@ const getTemplateTextFromRedington = async (projectId, waTemplateId) => {
 exports.getLeadDetails = async (req, res) => {
   try {
     const { leadId, userId } = req.params;
-
+    console.log("lead id", leadId);
     // Find user in the database
     let user = await User.findOne({ kylasUserId: userId });
 
@@ -92,7 +92,7 @@ exports.getLeadDetails = async (req, res) => {
     }
 
     let kylasAccessToken = user.kylasAccessToken;
-
+    console.log("lead id", kylasAccessToken);
     // Fetch lead details
     const response = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
       headers: {
