@@ -92,8 +92,8 @@ const refreshKylasToken = async (userId) => {
     }
 
     // Check if the access token has expired
-    if (user.expiresAt && currentTime > user.expiresAt) {
-      console.log("Access token expired, refreshing...");
+    // if (user.expiresAt && currentTime > user.expiresAt) {
+    //   console.log("Access token expired, refreshing...");
 
       const response = await axios.post(
         "https://api.kylas.io/oauth/token",
