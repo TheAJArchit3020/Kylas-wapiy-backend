@@ -75,6 +75,7 @@ const getTemplateTextFromRedington = async (projectId, waTemplateId) => {
 };
 const refreshKylasToken = async (userId) => {
   try {
+    console.log("refresshing token");
     const user = await User.findOne({ kylasUserId: userId });
 
     if (!user) throw new Error("User not found");
