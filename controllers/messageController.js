@@ -73,6 +73,72 @@ const getTemplateTextFromRedington = async (projectId, waTemplateId) => {
     return null;
   }
 };
+const refreshKylasToken = async (userId) => {
+  try {
+    const user = await User.findOne({ kylasUserId: userId });
+
+    if (!user) throw new Error("User not found");
+
+    const currentTime = new Date();
+
+    // Check if the refresh token has expired
+    if (
+      user.refreshTokenExpiresAt &&
+      currentTime > user.refreshTokenExpiresAt
+    ) {
+      console.error("Refresh token expired. User needs to reauthorize.");
+      throw new Error("Refresh token expired. Please reauthorize.");
+    }
+
+    // Check if the access token has expired
+    if (user.expiresAt && currentTime > user.expiresAt) {
+      console.log("Access token expired, refreshing...");
+
+      const response = await axios.post(
+        "https://api.kylas.io/oauth/token",
+        new URLSearchParams({
+          grant_type: "refresh_token",
+          refresh_token: user.kylasRefreshToken,
+        }),
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization:
+              "Basic " +
+              Buffer.from(
+                `${process.env.KYLAS_CLIENT_ID}:${process.env.KYLAS_CLIENT_SECRET}`
+              ).toString("base64"),
+          },
+        }
+      );
+
+      const { access_token, refresh_token, expires_in } = response.data;
+      console.log("New access token generated:", access_token);
+
+      const expiresAt = new Date(Date.now() + expires_in * 1000);
+      const refreshTokenExpiresAt = new Date(
+        Date.now() + 90 * 24 * 60 * 60 * 1000
+      ); // 90 days
+
+      await User.findOneAndUpdate(
+        { kylasUserId: userId },
+        {
+          kylasAccessToken: access_token,
+          kylasRefreshToken: refresh_token,
+          expiresAt,
+          refreshTokenExpiresAt,
+        }
+      );
+
+      return access_token;
+    }
+
+    return user.kylasAccessToken;
+  } catch (error) {
+    console.error("Error refreshing Kylas access token:", error.message);
+    throw error;
+  }
+};
 
 /**
  * Function to fetch lead details
@@ -83,6 +149,7 @@ exports.getLeadDetails = async (req, res) => {
     console.log("lead id", leadId);
     // Find user in the database
     let user = await User.findOne({ kylasUserId: userId });
+    refreshKylasToken(userId);
 
     if (!user || !user.projectId) {
       return res.status(404).json({
