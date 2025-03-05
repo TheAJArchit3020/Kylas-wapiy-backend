@@ -163,7 +163,6 @@ exports.getLeadDetails = async (req, res) => {
 
     let kylasAPIKey = user.kylasAPIKey;
     console.log("Using Kylas API Key:", kylasAPIKey);
-    console.log("lead id", kylasAccessToken);
     // Fetch lead details
     const response = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
       headers: {
