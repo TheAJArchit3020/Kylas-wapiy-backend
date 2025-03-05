@@ -73,69 +73,6 @@ const getTemplateTextFromRedington = async (projectId, waTemplateId) => {
     return null;
   }
 };
-const refreshKylasToken = async (userId) => {
-  try {
-    console.log("refresshing token");
-    const user = await User.findOne({ kylasUserId: userId });
-
-    if (!user) throw new Error("User not found");
-
-    const currentTime = new Date();
-
-    // Check if the refresh token has expired
-    if (
-      user.refreshTokenExpiresAt &&
-      currentTime > user.refreshTokenExpiresAt
-    ) {
-      console.error("Refresh token expired. User needs to reauthorize.");
-      throw new Error("Refresh token expired. Please reauthorize.");
-    }
-
-    // Check if the access token has expired
-    console.log("Access token expired, refreshing...");
-
-    const response = await axios.post(
-      "https://api.kylas.io/oauth/token",
-      new URLSearchParams({
-        grant_type: "refresh_token",
-        refresh_token: user.kylasRefreshToken,
-      }),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization:
-            "Basic " +
-            Buffer.from(
-              `${process.env.KYLAS_CLIENT_ID}:${process.env.KYLAS_CLIENT_SECRET}`
-            ).toString("base64"),
-        },
-      }
-    );
-
-    const { access_token, refresh_token, expires_in } = response.data;
-    console.log("New access token generated:", access_token);
-
-    const expiresAt = new Date(Date.now() + expires_in * 1000);
-    const refreshTokenExpiresAt = new Date(
-      Date.now() + 90 * 24 * 60 * 60 * 1000
-    ); // 90 days
-
-    await User.findOneAndUpdate(
-      { kylasUserId: userId },
-      {
-        kylasAccessToken: access_token,
-        kylasRefreshToken: refresh_token,
-        expiresAt,
-        refreshTokenExpiresAt,
-      }
-    );
-
-    return access_token;
-  } catch (error) {
-    console.error("Error refreshing Kylas access token:", error.message);
-    throw error;
-  }
-};
 
 /**
  * Function to fetch lead details
@@ -280,9 +217,9 @@ const logMessageInKylas = async ({
     if (!user) throw new Error("User not found");
 
     // Use the current Kylas Access Token
-    let kylasAccessToken = user.kylasAccessToken;
+    let kylasAPIKey = user.kylasAPIKey;
     // Prepare message log payload with proper data types
-    console.log(kylasAccessToken);
+    console.log(kylasAPIKey);
     const payload = {
       content: messageContent,
       messageType: "whatsapp",
@@ -319,8 +256,7 @@ const logMessageInKylas = async ({
     try {
       await axios.post(`${API_KYLAS}/messages`, payload, {
         headers: {
-          Authorization: `Bearer ${kylasAccessToken}`,
-          "Content-Type": "application/json",
+          "api-key": kylasAPIKey, // Using API Key instead of Bearer Token
         },
       });
     } catch (error) {
@@ -448,7 +384,9 @@ exports.sendTemplateMessage = async (req, res) => {
 
     // Fetch lead details from Kylas API
     const leadResponse = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
-      headers: { Authorization: `Bearer ${user.kylasAccessToken}` },
+      headers: {
+        "api-key": user.kylasAPIKey, // Using API Key instead of Bearer Token
+      },
     });
 
     const leadData = leadResponse.data;
