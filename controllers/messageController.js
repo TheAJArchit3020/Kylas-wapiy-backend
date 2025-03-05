@@ -146,7 +146,6 @@ exports.getLeadDetails = async (req, res) => {
     console.log("lead id", leadId);
     // Find user in the database
     let user = await User.findOne({ kylasUserId: userId });
-    refreshKylasToken(userId);
 
     if (!user || !user.projectId) {
       return res.status(404).json({
@@ -155,12 +154,20 @@ exports.getLeadDetails = async (req, res) => {
       });
     }
 
-    let kylasAccessToken = user.kylasAccessToken;
+    if (!user || !user.kylasAPIKey) {
+      return res.status(404).json({
+        error:
+          "API Key not found. Please update your API Key in the API Access tab.",
+      });
+    }
+
+    let kylasAPIKey = user.kylasAPIKey;
+    console.log("Using Kylas API Key:", kylasAPIKey);
     console.log("lead id", kylasAccessToken);
     // Fetch lead details
     const response = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
       headers: {
-        Authorization: `Bearer ${kylasAccessToken}`,
+        "api-key": kylasAPIKey, // Using API Key instead of Bearer Token
       },
     });
 

@@ -5,5 +5,5 @@ if (!kylasCallback) {
   throw new Error("kylasCallback function is not defined in authController");
 }
 router.post("/kylas/callback", kylasCallback);
-
+router.post("/update-api");
 module.exports = router;

@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema({
   otp: String,
   otpExpiresAt: Date,
   verified: Boolean,
+  kylasAPIKey: String,
 });
 
 module.exports = mongoose.model("User", userSchema);

@@ -57,3 +57,21 @@ exports.kylasCallback = async (req, res) => {
     res.status(500).send("Kylas authentication failed.");
   }
 };
+
+exports.update_API = async (req, res) => {
+  const userId = req.body.kylasUserId;
+  const user = await User.findOne({ kylasUserId: userId });
+  if (!user || !req.body.kylasAPIKey) {
+    return res.status(404).json({ error: "User not found in the database" });
+  }
+  await User.findOneAndUpdate(
+    { kylasUserId: userId },
+    {
+      kylasAPIKey: req.body.kylasAPIKey,
+    }
+  );
+
+  console.log("Updated the api key");
+
+  return res.status(202).json({ message: "api key updated" });
+};
