@@ -360,6 +360,7 @@ exports.sendTemplateMessage = async (req, res) => {
           "Project not found, Please connect a project in details page of the app",
       });
     const projectId = user.projectId;
+    console.log(projectId);
     const senderNumber = await getSenderPhoneNumber(projectId);
     if (!senderNumber)
       return res
