@@ -153,7 +153,7 @@ router.post("/webhook/redington", async (req, res) => {
             "Content-Type": "application/json",
           },
         });
-        console.log(leadResponse);
+        console.log("lead response" + leadResponse.data);
         const leadName = `${lead.firstName || ""} ${
           lead.lastName || ""
         }`.trim();
