@@ -12,9 +12,11 @@ router.post("/webhook/redington", async (req, res) => {
   if (!projectId) {
     return res.status(400).send("Missing Project ID");
   }
-
+  console.log(projectId);
   const user = await User.findOne({ projectId });
   if (!user) throw new Error("User not found for given project ID");
+
+  console.log("got the kylas user");
   const kylasAPIKey = user.kylasAPIKey;
   const kylasUserId = user.kylasUserId;
 
