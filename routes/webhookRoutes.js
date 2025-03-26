@@ -7,7 +7,14 @@ const SECRET_KEY =
   "7a322f1e4cfa17a93d7561534fa828a6aba7bc247770e3bfcc8c100aa38e916a";
 router.post("/webhook/redington", async (req, res) => {
   console.log("got webhook event");
-  const projectId = req.headers["x-Project-Id"]; // Identify the project
+  console.log(req);
+  let projectId;
+  try {
+    projectId = req.headers["x-Project-Id"]; // Identify the project
+  } catch (error) {
+    console.log(error.message);
+    console.log(error);
+  }
 
   if (!projectId) {
     return res.status(400).send("Missing Project ID");
