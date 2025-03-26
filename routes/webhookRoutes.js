@@ -147,6 +147,13 @@ router.post("/webhook/redington", async (req, res) => {
       }
       for (const lead of leads) {
         const leadId = lead.id;
+        const leadResponse = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
+          headers: {
+            "api-key": kylasAPIKey,
+            "Content-Type": "application/json",
+          },
+        });
+        console.log(leadResponse);
         const leadName = `${lead.firstName || ""} ${
           lead.lastName || ""
         }`.trim();
