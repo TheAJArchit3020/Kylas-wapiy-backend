@@ -8,6 +8,25 @@ const API_KYLAS = "https://api.kylas.io/v1";
 const SECRET_KEY =
   "7a322f1e4cfa17a93d7561534fa828a6aba7bc247770e3bfcc8c100aa38e916a";
 
+const getSenderPhoneNumber = async (projectId) => {
+  try {
+    const response = await axios.get(
+      `${API_WAPIY}/project-apis/v1/project/${projectId}`,
+      {
+        headers: { "X-Partner-API-Key": PARTNER_API_KEY },
+      }
+    );
+    console.log("sender Phone Number: ", response.data.wa_number);
+    return response.data.wa_number || null;
+  } catch (error) {
+    console.error(
+      "❌ Error fetching sender phone number:",
+      error.response?.data || error.message
+    );
+    return null;
+  }
+};
+
 const logMessageInKylas = async ({
   userId,
   leadId,
@@ -112,8 +131,46 @@ router.post("/webhook/redington", async (req, res) => {
       const messageText = message.message_content?.text || "No message content";
       console.log("📩 User sent a message to the business:", messageContentRaw);
       const searchBody = {
-        query: phoneNumber,
-        fields: ["phoneNumbers"],
+        fields: [
+          "firstName",
+          "lastName",
+          "phoneNumbers",
+          "emails",
+          "city",
+          "state",
+          "address",
+          "products",
+          "createdAt",
+          "updatedAt",
+          "id",
+          "cfMulti",
+          "cfPackagingType",
+          "score",
+          "taskDueOn",
+          "meetingScheduledOn",
+          "latestActivityCreatedAt",
+          "cfCallLoggedAtDate",
+          "cfAddress",
+          "cfMultiValuePicklist11",
+          "latestNotes",
+          "recordActions",
+          "customFieldValues",
+          "addressCoordinate",
+        ],
+        jsonRule: {
+          condition: "AND",
+          valid: true,
+          rules: [
+            {
+              id: "multi_field",
+              field: "multi_field",
+              type: "multi_field",
+              input: "multi_field",
+              operator: "multi_field",
+              value: "+" + phoneNumber,
+            },
+          ],
+        },
       };
 
       const leadSearchResponse = await axios.post(
@@ -160,12 +217,12 @@ router.post("/webhook/redington", async (req, res) => {
         const leadName = `${lead.firstName || ""} ${
           lead.lastName || ""
         }`.trim();
-
+        const senderNumber = await getSenderPhoneNumber(projectId);
         await logMessageInKylas({
           userId: kylasUserId,
           leadId,
           messageContent,
-          senderNumber: phoneNumber,
+          senderNumber: senderNumber,
           recipientNumber: phoneNumber,
           attachments,
           recipientName: leadName,
