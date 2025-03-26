@@ -40,13 +40,12 @@ router.post("/webhook/redington", async (req, res) => {
   // Handle different webhook events
   switch (topic) {
     case "message.sender.user":
-      console.log("📩 User sent a message to the business:", data);
-
       const message = data.message;
       const phoneNumber = message.phone_number;
       const userName = message.userName || "Unknown";
+      const messageContent = message.message_content;
       const messageText = message.message_content?.text || "No message content";
-
+      console.log("📩 User sent a message to the business:", messageContent);
       const searchBody = {
         query: phoneNumber,
         fields: ["phoneNumbers"],
