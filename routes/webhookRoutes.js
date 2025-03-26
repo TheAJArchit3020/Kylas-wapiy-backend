@@ -231,8 +231,8 @@ router.post("/webhook/redington", async (req, res) => {
           userId: kylasUserId,
           leadId,
           messageContent,
-          senderNumber: senderNumber,
-          recipientNumber: phoneNumber,
+          senderNumber: phoneNumber,
+          recipientNumber: senderNumber,
           attachments,
           recipientName: leadName,
         });
