@@ -205,6 +205,13 @@ router.post("/webhook/redington", async (req, res) => {
           fileName: "incoming-media.jpg",
           url: messageContentRaw.url,
         });
+      } else if (messageContentRaw.url) {
+        // Only media with no caption or text
+        messageContent = "New WhatsApp message";
+        attachments.push({
+          fileName: "incoming-media.jpg",
+          url: messageContentRaw.url,
+        });
       }
       for (const lead of leads) {
         console.log("the lead: ", lead);
