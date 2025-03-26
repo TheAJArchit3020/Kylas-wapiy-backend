@@ -106,6 +106,7 @@ router.post("/webhook/redington", async (req, res) => {
     case "message.sender.user":
       const message = data.message;
       const phoneNumber = message.phone_number;
+      console.log("The Phone Number");
       const userName = message.userName || "Unknown";
       const messageContentRaw = message.message_content || {};
       const messageText = message.message_content?.text || "No message content";
