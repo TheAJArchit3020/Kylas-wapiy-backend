@@ -13,7 +13,13 @@ router.post("/webhook/redington", async (req, res) => {
     return res.status(400).send("Missing Project ID");
   }
   console.log(projectId);
-  const user = await User.findOne({ projectId });
+  let user;
+  try {
+    user = await User.findOne({ projectId });
+  } catch (error) {
+    console.log(error);
+  }
+
   if (!user) throw new Error("User not found for given project ID");
 
   console.log("got the kylas user");
