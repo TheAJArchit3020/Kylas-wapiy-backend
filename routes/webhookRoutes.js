@@ -109,7 +109,7 @@ router.post("/webhook/redington", async (req, res) => {
       const userName = message.userName || "Unknown";
       const messageContentRaw = message.message_content || {};
       const messageText = message.message_content?.text || "No message content";
-      console.log("📩 User sent a message to the business:", messageContent);
+      console.log("📩 User sent a message to the business:", messageContentRaw);
       const searchBody = {
         query: phoneNumber,
         fields: ["phoneNumbers"],
