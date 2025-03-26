@@ -4,28 +4,48 @@ const User = require("../models/User"); // User Schema for MongoDB
 const router = express.Router();
 const crypto = require("crypto");
 const SECRET_KEY =
-  "06c56c0dc5225ecb346900570700cf9f6013f00b3da0490873f5f923c774d459";
-router.post("/webhook/redington", (req, res) => {
+  "7a322f1e4cfa17a93d7561534fa828a6aba7bc247770e3bfcc8c100aa38e916a";
+router.post("/webhook/redington", async (req, res) => {
   console.log("got webhook event");
-  const signature = req.headers["x-signature"]; // Get signature from headers
-  const projectId = req.headers["x-project-id"]; // Identify the project
-  const payload = JSON.stringify(req.body);
-  console.log(JSON.stringify(payload));
+  const projectId = req.headers["x-Project-Id"]; // Identify the project
 
-  // Verify the authenticity of the request
-  const expectedSignature = crypto
-    .createHmac("sha256", SECRET_KEY)
-    .update(payload)
-    .digest("hex");
+  if (!projectId) {
+    return res.status(400).send("Missing Project ID");
+  }
 
-  console.log("✅ Webhook received:", req.body);
+  const user = await User.findOne({ projectId });
+  if (!user) throw new Error("User not found for given project ID");
+  const kylasAPIKey = user.kylasAPIKey;
+  const kylasUserId = user.kylasUserId;
 
   const { topic, data } = req.body;
+  console.log("✅ Webhook received:", req.body);
 
   // Handle different webhook events
   switch (topic) {
     case "message.sender.user":
       console.log("📩 User sent a message to the business:", data);
+
+      const searchBody = {
+        query: phoneNumber,
+        fields: ["phoneNumbers"],
+      };
+
+      const leadSearchResponse = await axios.post(
+        `${API_KYLAS}/search/lead?sort=updatedAt,desc&page=0&size=1`,
+        searchBody,
+        {
+          headers: {
+            "api-key": kylasAPIKey,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const leads = leadSearchResponse.data.content;
+
+      console.log(leads);
+
       break;
 
     case "message.created":
