@@ -5,6 +5,8 @@ const router = express.Router();
 const crypto = require("crypto");
 
 const API_KYLAS = "https://api.kylas.io/v1";
+const API_WAPIY = "https://apis.whatsapp.redingtongroup.com";
+const PARTNER_API_KEY = process.env.WAPIY_PARTNER_API_KEY;
 const SECRET_KEY =
   "7a322f1e4cfa17a93d7561534fa828a6aba7bc247770e3bfcc8c100aa38e916a";
 
