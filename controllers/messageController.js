@@ -372,8 +372,10 @@ exports.sendTemplateMessage = async (req, res) => {
       projectId,
       template.name
     );
-    if (!waTemplateId)
+    if (!waTemplateId) {
+      console.error("Whatsapptemplate not found");
       return res.status(404).json({ error: "WhatsApp template not found" });
+    }
 
     // Fetch the actual template text from Redington
     let messageContent = await getTemplateTextFromRedington(
