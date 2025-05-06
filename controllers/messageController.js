@@ -40,7 +40,7 @@ const getTemplateIdFromRedington = async (projectId, templateName) => {
     );
 
     const templates = response.data.template || []; // Corrected to extract templates from "template" key
-    console.log("Redington template list:", templates);
+    // console.log("Redington template list:", templates);
 
     const template = templates.find((t) => t.name === templateName);
     console.log("Redington Template Object:", template);
