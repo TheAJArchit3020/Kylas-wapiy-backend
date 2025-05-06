@@ -33,7 +33,7 @@ const getProjectId = async (userId) => {
 const getTemplateIdFromRedington = async (projectId, templateName) => {
   try {
     const response = await axios.get(
-      `${API_WAPIY}/project-apis/v1/project/${projectId}/wa_template/`,
+      `${API_WAPIY}/project-apis/v1/project/${projectId}/wa_template/?limit=1000`,
       {
         headers: { "X-Partner-API-Key": PARTNER_API_KEY },
       }
