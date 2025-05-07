@@ -371,7 +371,7 @@ exports.sendMessage = async (req, res) => {
 
 exports.sendTemplateMessage = async (req, res) => {
   try {
-    const { userId, to, template, leadId } = req.body;
+    const { userId, to, template, leadId, entityType } = req.body;
 
     // Fetch user details
     const user = await User.findOne({ kylasUserId: userId });
@@ -407,12 +407,31 @@ exports.sendTemplateMessage = async (req, res) => {
     if (!messageContent)
       return res.status(500).json({ error: "Failed to fetch template text" });
 
+    let leadResponse;
+    if (entityType === "deal") {
+      const dealResponse = await axios.get(`${API_KYLAS}/deals/${leadId}`, {
+        headers: {
+          "api-key": user.kylasAPIKey, // Using API Key instead of Bearer Token
+        },
+      });
+      console.log("The deal response", dealResponse.data);
+      console.log("lead id", dealResponse.data.customFieldValues.cfLeadId);
+      leadResponse = await axios.get(
+        `${API_KYLAS}/leads/${dealResponse.data.customFieldValues.cfLeadId}`,
+        {
+          headers: {
+            "api-key": user.kylasAPIKey, // Using API Key instead of Bearer Token
+          },
+        }
+      );
+    } else {
+      leadResponse = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
+        headers: {
+          "api-key": user.kylasAPIKey, // Using API Key instead of Bearer Token
+        },
+      });
+    }
     // Fetch lead details from Kylas API
-    const leadResponse = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
-      headers: {
-        "api-key": user.kylasAPIKey, // Using API Key instead of Bearer Token
-      },
-    });
 
     const leadData = leadResponse.data;
     const leadName =
