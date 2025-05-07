@@ -79,7 +79,7 @@ const getTemplateTextFromRedington = async (projectId, waTemplateId) => {
  */
 exports.getLeadDetails = async (req, res) => {
   try {
-    const { leadId, userId } = req.params;
+    const { leadId, userId, entityType } = req.params;
     console.log("lead id", leadId);
     // Find user in the database
     let user = await User.findOne({ kylasUserId: userId });
@@ -100,12 +100,31 @@ exports.getLeadDetails = async (req, res) => {
 
     let kylasAPIKey = user.kylasAPIKey;
     console.log("Using Kylas API Key:", kylasAPIKey);
+
+    let response;
+    if (entityType === "deal") {
+      const dealResponse = await axios.get(`${API_KYLAS}/deals/${leadId}`, {
+        headers: {
+          "api-key": kylasAPIKey, // Using API Key instead of Bearer Token
+        },
+      });
+
+      response = await axios.get(
+        `${API_KYLAS}/leads/${dealResponse.customFieldValues.cfLeadId}`,
+        {
+          headers: {
+            "api-key": kylasAPIKey, // Using API Key instead of Bearer Token
+          },
+        }
+      );
+    } else {
+      response = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
+        headers: {
+          "api-key": kylasAPIKey, // Using API Key instead of Bearer Token
+        },
+      });
+    }
     // Fetch lead details
-    const response = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
-      headers: {
-        "api-key": kylasAPIKey, // Using API Key instead of Bearer Token
-      },
-    });
 
     const leadData = response.data;
 
