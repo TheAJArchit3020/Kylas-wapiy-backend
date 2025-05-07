@@ -232,6 +232,7 @@ const logMessageInKylas = async ({
   recipientNumber,
   attachments = [],
   recipientName,
+  entityType,
 }) => {
   try {
     const user = await User.findOne({ kylasUserId: userId });
@@ -253,7 +254,7 @@ const logMessageInKylas = async ({
       status: "sent",
       recipients: [
         {
-          entity: "lead",
+          entity: entityType,
           id: Number(leadId), // Ensures it's a number
           phoneNumber: Number(recipientNumber), // Ensures it's a number
           name: recipientName || "test", // Uses provided name or defaults to "test"
@@ -261,7 +262,7 @@ const logMessageInKylas = async ({
       ],
       relatedTo: [
         {
-          entity: "lead",
+          entity: entityType,
           id: Number(leadId), // Ensures it's a number
           name: recipientName || "test", // Uses provided name or defaults to "test"
           phoneNumber: Number(recipientNumber),
@@ -300,7 +301,7 @@ const logMessageInKylas = async ({
 // **2. Send Normal Message**
 exports.sendMessage = async (req, res) => {
   try {
-    const { userId, to, message, leadId, imageUrl } = req.body;
+    const { userId, to, message, leadId, imageUrl, entityType } = req.body;
     const user = await User.findOne({ kylasUserId: userId });
     if (!user || !user.projectId) {
       return res.status(404).json({
@@ -354,6 +355,7 @@ exports.sendMessage = async (req, res) => {
       messageContent: message,
       senderNumber,
       recipientNumber: to,
+      entityType,
       attachments: imageUrl
         ? [{ fileName: "uploaded_image.jpg", url: imageUrl }]
         : [],
@@ -522,6 +524,7 @@ exports.sendTemplateMessage = async (req, res) => {
       senderNumber,
       recipientNumber: to,
       attachments,
+      entityType,
     });
 
     res.json({ message: "Template message sent successfully!" });
