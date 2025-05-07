@@ -109,9 +109,10 @@ exports.getLeadDetails = async (req, res) => {
           "api-key": kylasAPIKey, // Using API Key instead of Bearer Token
         },
       });
-      console.log("lead id", dealResponse.customFieldValues.cfLeadId);
+      console.log("The deal response", dealResponse.data);
+      console.log("lead id", dealResponse.data.customFieldValues.cfLeadId);
       response = await axios.get(
-        `${API_KYLAS}/leads/${dealResponse.customFieldValues.cfLeadId}`,
+        `${API_KYLAS}/leads/${dealResponse.data.customFieldValues.cfLeadId}`,
         {
           headers: {
             "api-key": kylasAPIKey, // Using API Key instead of Bearer Token
