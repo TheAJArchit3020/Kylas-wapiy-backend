@@ -80,7 +80,8 @@ const getTemplateTextFromRedington = async (projectId, waTemplateId) => {
 exports.getLeadDetails = async (req, res) => {
   try {
     const { leadId, userId, entityType } = req.params;
-    console.log("lead id", leadId);
+
+    console.log("entity Type", entityType);
     // Find user in the database
     let user = await User.findOne({ kylasUserId: userId });
 
@@ -108,7 +109,7 @@ exports.getLeadDetails = async (req, res) => {
           "api-key": kylasAPIKey, // Using API Key instead of Bearer Token
         },
       });
-
+      console.log("lead id", dealResponse.customFieldValues.cfLeadId);
       response = await axios.get(
         `${API_KYLAS}/leads/${dealResponse.customFieldValues.cfLeadId}`,
         {
@@ -123,6 +124,7 @@ exports.getLeadDetails = async (req, res) => {
           "api-key": kylasAPIKey, // Using API Key instead of Bearer Token
         },
       });
+      console.log("lead id", leadId);
     }
     // Fetch lead details
 
