@@ -316,7 +316,7 @@ exports.sendMessage = async (req, res) => {
       to,
       type: imageUrl ? "image" : "text",
       ...(imageUrl
-        ? { image: { link: imageUrl } } // Attach image if provided
+        ? { image: { link: imageUrl, caption: message || "" } } // Attach image if provided
         : { text: { body: message } }), // Otherwise, send text
     };
 
