@@ -226,46 +226,45 @@ exports.checkOrCreateContact = async (req, res) => {
 
 const logMessageInKylas = async ({
   userId,
-  leadId,
-  messageContent,
   senderNumber,
   recipientNumber,
-  attachments = [],
+  messageContent,
   recipientName,
-  entityType,
+  attachments = [],
+  recipientEntity,
+  recipientId,
+  relatedEntity,
+  relatedId,
 }) => {
   try {
     const user = await User.findOne({ kylasUserId: userId });
-
     if (!user) throw new Error("User not found");
 
-    // Use the current Kylas Access Token
-    let kylasAPIKey = user.kylasAPIKey;
-    // Prepare message log payload with proper data types
-    console.log(kylasAPIKey);
+    const kylasAPIKey = user.kylasAPIKey;
+
     const payload = {
       content: messageContent,
       messageType: "whatsapp",
       ownerId: userId,
-      senderNumber: Number(senderNumber), // Ensures it's a number
-      recipientNumber: Number(recipientNumber), // Ensures it's a number
+      senderNumber: Number(senderNumber),
+      recipientNumber: Number(recipientNumber),
       direction: "outgoing",
       sentAt: new Date().toISOString(),
       status: "sent",
       recipients: [
         {
-          entity: entityType,
-          id: Number(leadId), // Ensures it's a number
-          phoneNumber: Number(recipientNumber), // Ensures it's a number
-          name: recipientName || "test", // Uses provided name or defaults to "test"
+          entity: recipientEntity,
+          id: Number(recipientId),
+          phoneNumber: Number(recipientNumber),
+          name: recipientName || "Customer",
         },
       ],
       relatedTo: [
         {
-          entity: entityType,
-          id: Number(leadId), // Ensures it's a number
-          name: recipientName || "test", // Uses provided name or defaults to "test"
+          entity: relatedEntity,
+          id: Number(relatedId),
           phoneNumber: Number(recipientNumber),
+          name: recipientName || "Customer",
         },
       ],
       attachments,
@@ -276,18 +275,11 @@ const logMessageInKylas = async ({
       JSON.stringify(payload, null, 2)
     );
 
-    try {
-      await axios.post(`${API_KYLAS}/messages`, payload, {
-        headers: {
-          "api-key": kylasAPIKey, // Using API Key instead of Bearer Token
-        },
-      });
-    } catch (error) {
-      console.error(
-        "❌ Error while logging in Kylas",
-        error.response?.data || error.message
-      );
-    }
+    await axios.post(`${API_KYLAS}/messages`, payload, {
+      headers: {
+        "api-key": kylasAPIKey,
+      },
+    });
 
     console.log("✅ Message logged in Kylas CRM");
   } catch (error) {
@@ -297,7 +289,6 @@ const logMessageInKylas = async ({
     );
   }
 };
-
 // **2. Send Normal Message**
 exports.sendMessage = async (req, res) => {
   try {
@@ -346,20 +337,155 @@ exports.sendMessage = async (req, res) => {
       }
     );
 
-    console.log("✅ Normal message sent successfully!");
+    const attachments = imageUrl
+      ? [{ fileName: "uploaded_image.jpg", url: imageUrl }]
+      : [];
+    if (entityType === "deal") {
+      const dealRes = await axios.get(`${API_KYLAS}/deals/${leadId}`, {
+        headers: { "api-key": user.kylasAPIKey },
+      });
+      const deal = dealRes.data;
+      const cfLeadId = deal.customFieldValues?.cfLeadId;
+
+      const leadRes = cfLeadId
+        ? await axios.get(`${API_KYLAS}/leads/${cfLeadId}`, {
+            headers: { "api-key": user.kylasAPIKey },
+          })
+        : null;
+
+      const lead = leadRes?.data || null;
+      const recipientName = lead
+        ? `${lead.firstName || ""} ${lead.lastName || ""}`.trim()
+        : "Customer";
+
+      // 1. contact → deal
+      for (const contact of deal.associatedContacts || []) {
+        await logMessageInKylas({
+          userId,
+          senderNumber,
+          recipientNumber: to,
+          messageContent: message,
+          recipientName: contact.name,
+          attachments,
+          recipientEntity: "contact",
+          recipientId: contact.id,
+          relatedEntity: "deal",
+          relatedId: deal.id,
+        });
+      }
+
+      if (lead) {
+        // 3. lead → lead
+        await logMessageInKylas({
+          userId,
+          senderNumber,
+          recipientNumber: to,
+          messageContent: message,
+          recipientName,
+          attachments,
+          recipientEntity: "lead",
+          recipientId: lead.id,
+          relatedEntity: "lead",
+          relatedId: lead.id,
+        });
+      }
+    } else {
+      const leadRes = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
+        headers: { "api-key": user.kylasAPIKey },
+      });
+      const lead = leadRes.data;
+      const leadName = `${lead.firstName || ""} ${lead.lastName || ""}`.trim();
+      const phone = lead.phoneNumbers?.[0]?.value;
+
+      await logMessageInKylas({
+        userId,
+        senderNumber,
+        recipientNumber: to,
+        messageContent: message,
+        recipientName: leadName,
+        attachments,
+        recipientEntity: "lead",
+        recipientId: lead.id,
+        relatedEntity: "lead",
+        relatedId: lead.id,
+      });
+      const contactSearchBody = {
+        jsonRule: {
+          condition: "AND",
+          valid: true,
+          rules: [
+            {
+              id: "multi_field",
+              field: "multi_field",
+              type: "multi_field",
+              input: "multi_field",
+              operator: "multi_field",
+              value: `+${phone}`,
+            },
+          ],
+        },
+      };
+
+      const contactsRes = await axios.post(
+        `${API_KYLAS}/search/contact?page=0&size=10`,
+        contactSearchBody,
+        {
+          headers: {
+            "api-key": kylasAPIKey,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const contacts = contactsRes.data.content || [];
+      for (const contact of contacts) {
+        const dealSearchBody = {
+          jsonRule: {
+            condition: "AND",
+            valid: true,
+            rules: [
+              {
+                id: "multi_field",
+                field: "multi_field",
+                type: "multi_field",
+                input: "multi_field",
+                operator: "multi_field",
+                value: contact.id.toString(),
+              },
+            ],
+          },
+        };
+
+        const dealsRes = await axios.post(
+          `${API_KYLAS}/search/deal?page=0&size=10`,
+          dealSearchBody,
+          {
+            headers: {
+              "api-key": kylasAPIKey,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const deals = dealsRes.data.content || [];
+        for (const deal of deals) {
+          await logMessageInKylas({
+            userId,
+            senderNumber,
+            recipientNumber: to,
+            messageContent: message,
+            recipientName: contact.name,
+            attachments,
+            recipientEntity: "contact",
+            recipientId: contact.id,
+            relatedEntity: "deal",
+            relatedId: deal.id,
+          });
+        }
+      }
+    }
 
     // Log the message in Kylas CRM
-    await logMessageInKylas({
-      userId,
-      leadId,
-      messageContent: message,
-      senderNumber,
-      recipientNumber: to,
-      entityType,
-      attachments: imageUrl
-        ? [{ fileName: "uploaded_image.jpg", url: imageUrl }]
-        : [],
-    });
 
     res.json({ message: "Message sent successfully!" });
   } catch (error) {
@@ -384,14 +510,11 @@ exports.sendTemplateMessage = async (req, res) => {
           "Project not found, Please connect a project in details page of the app",
       });
     const projectId = user.projectId;
-    console.log("This is the project iD: ", projectId);
     const senderNumber = await getSenderPhoneNumber(projectId);
     if (!senderNumber)
       return res
         .status(500)
         .json({ error: "Failed to fetch sender phone number" });
-
-    // Fetch the WhatsApp template ID from Redington
     const waTemplateId = await getTemplateIdFromRedington(
       projectId,
       template.name
@@ -409,44 +532,12 @@ exports.sendTemplateMessage = async (req, res) => {
     if (!messageContent)
       return res.status(500).json({ error: "Failed to fetch template text" });
 
-    let leadResponse;
-    if (entityType === "deal") {
-      const dealResponse = await axios.get(`${API_KYLAS}/deals/${leadId}`, {
-        headers: {
-          "api-key": user.kylasAPIKey, // Using API Key instead of Bearer Token
-        },
-      });
-      console.log("The deal response", dealResponse.data);
-      console.log("lead id", dealResponse.data.customFieldValues.cfLeadId);
-      leadResponse = await axios.get(
-        `${API_KYLAS}/leads/${dealResponse.data.customFieldValues.cfLeadId}`,
-        {
-          headers: {
-            "api-key": user.kylasAPIKey, // Using API Key instead of Bearer Token
-          },
-        }
-      );
-    } else {
-      leadResponse = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
-        headers: {
-          "api-key": user.kylasAPIKey, // Using API Key instead of Bearer Token
-        },
-      });
-    }
-    // Fetch lead details from Kylas API
-
-    const leadData = leadResponse.data;
-    const leadName =
-      `${leadData.firstName || ""} ${leadData.lastName || ""}`.trim() ||
-      "Customer"; // Default to "Customer" if missing
-    const companyName = leadData.companyName || "N/A";
-    console.log(leadName);
-    // Clone the template object to avoid modifying the original
     const sanitizedTemplate = JSON.parse(JSON.stringify(template));
     delete sanitizedTemplate.type;
 
-    let attachments = [];
-    let parameterValues = [];
+    const attachments = [];
+    const parameterValues = [];
+
     // Replace placeholders dynamically in components
     sanitizedTemplate.components.forEach((component) => {
       if (component.parameters) {
@@ -496,11 +587,6 @@ exports.sendTemplateMessage = async (req, res) => {
       template: sanitizedTemplate,
     };
 
-    console.log(
-      "🚀 Sending Template WhatsApp Message:",
-      JSON.stringify(payload, null, 2)
-    );
-
     await axios.post(
       `${API_WAPIY}/project-apis/v1/project/${projectId}/messages`,
       payload,
@@ -515,17 +601,77 @@ exports.sendTemplateMessage = async (req, res) => {
 
     console.log("✅ Template message sent successfully!");
     console.log("Message Content: ", messageContent);
+    if (entityType === "deal") {
+      const deal = await axios
+        .get(`${API_KYLAS}/deals/${leadId}`, {
+          headers: { "api-key": user.kylasAPIKey },
+        })
+        .then((res) => res.data);
 
-    // Log the template message in Kylas CRM with attachments
-    await logMessageInKylas({
-      userId,
-      leadId,
-      messageContent,
-      senderNumber,
-      recipientNumber: to,
-      attachments,
-      entityType,
-    });
+      const cfLeadId = deal.customFieldValues?.cfLeadId;
+      const lead = cfLeadId
+        ? await axios
+            .get(`${API_KYLAS}/leads/${cfLeadId}`, {
+              headers: { "api-key": user.kylasAPIKey },
+            })
+            .then((res) => res.data)
+        : null;
+
+      const recipientName = lead
+        ? `${lead.firstName || ""} ${lead.lastName || ""}`.trim()
+        : "Customer";
+
+      for (const contact of deal.associatedContacts || []) {
+        await logMessageInKylas({
+          userId,
+          senderNumber,
+          recipientNumber: to,
+          messageContent,
+          recipientName: contact.name,
+          attachments,
+          recipientEntity: "contact",
+          recipientId: contact.id,
+          relatedEntity: "deal",
+          relatedId: deal.id,
+        });
+      }
+
+      // contact → lead
+      if (lead) {
+        await logMessageInKylas({
+          userId,
+          senderNumber,
+          recipientNumber: to,
+          messageContent,
+          recipientName,
+          attachments,
+          recipientEntity: "lead",
+          recipientId: lead.id,
+          relatedEntity: "lead",
+          relatedId: lead.id,
+        });
+      }
+    } else {
+      const lead = await axios
+        .get(`${API_KYLAS}/leads/${leadId}`, {
+          headers: { "api-key": user.kylasAPIKey },
+        })
+        .then((res) => res.data);
+      const leadName = `${lead.firstName || ""} ${lead.lastName || ""}`.trim();
+
+      await logMessageInKylas({
+        userId,
+        senderNumber,
+        recipientNumber: to,
+        messageContent,
+        recipientName: leadName,
+        attachments,
+        recipientEntity: "lead",
+        recipientId: lead.id,
+        relatedEntity: "lead",
+        relatedId: lead.id,
+      });
+    }
 
     res.json({ message: "Template message sent successfully!" });
   } catch (error) {

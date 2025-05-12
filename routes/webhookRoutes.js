@@ -38,12 +38,18 @@ const logMessageInKylas = async ({
   attachments = [],
   recipientName,
   entityType,
+  contactId,
 }) => {
   try {
     const user = await User.findOne({ kylasUserId: userId });
     if (!user) throw new Error("User not found");
 
     const kylasAPIKey = user.kylasAPIKey;
+
+    if (entityType === "deal" && !contactId) {
+      console.warn("⚠️ contactId is required to log a message under a deal.");
+      return;
+    }
 
     const payload = {
       content: messageContent,
@@ -56,8 +62,8 @@ const logMessageInKylas = async ({
       status: "delivered",
       recipients: [
         {
-          entity: entityType,
-          id: Number(leadId),
+          entity: entityType === "deal" ? "contact" : "lead",
+          id: entityType === "deal" ? Number(contactId) : Number(leadId),
           phoneNumber: Number(recipientNumber),
           name: recipientName || "test",
         },
@@ -330,6 +336,7 @@ router.post("/webhook/redington", async (req, res) => {
             attachments,
             recipientName: contact.firstName + " " + contact.lastName,
             entityType: "deal",
+            contactId: contact.id,
           });
         }
       }
