@@ -134,6 +134,7 @@ router.post("/webhook/redington", async (req, res) => {
     case "message.sender.user":
       const message = data.message;
       const phoneNumber = message.phone_number;
+      const senderNumber = await getSenderPhoneNumber(projectId);
       console.log("The Phone Number", phoneNumber);
       const userName = message.userName || "Unknown";
       const messageContentRaw = message.message_content || {};
@@ -234,7 +235,7 @@ router.post("/webhook/redington", async (req, res) => {
         const leadName = `${lead.firstName || ""} ${
           lead.lastName || ""
         }`.trim();
-        const senderNumber = await getSenderPhoneNumber(projectId);
+
         matchedLeadIds.push(String(leadId));
         await logMessageInKylas({
           userId: kylasUserId,
