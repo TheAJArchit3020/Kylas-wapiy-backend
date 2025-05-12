@@ -472,18 +472,19 @@ exports.sendMessage = async (req, res) => {
 
         const deals = dealsRes.data.content || [];
         for (const deal of deals) {
-          await logMessageInKylas({
-            userId,
-            senderNumber,
-            recipientNumber: to,
-            messageContent: message,
-            recipientName: contact.name,
-            attachments,
-            recipientEntity: "contact",
-            recipientId: contact.id,
-            relatedEntity: "deal",
-            relatedId: deal.id,
-          });
+          if (String(deal.customFieldValues?.cfLeadId) === String(lead.id))
+            await logMessageInKylas({
+              userId,
+              senderNumber,
+              recipientNumber: to,
+              messageContent: message,
+              recipientName: contact.name,
+              attachments,
+              recipientEntity: "contact",
+              recipientId: contact.id,
+              relatedEntity: "deal",
+              relatedId: deal.id,
+            });
         }
       }
     }
@@ -736,18 +737,19 @@ exports.sendTemplateMessage = async (req, res) => {
 
         const deals = dealsRes.data.content || [];
         for (const deal of deals) {
-          await logMessageInKylas({
-            userId,
-            senderNumber,
-            recipientNumber: to,
-            messageContent,
-            recipientName: contact.name,
-            attachments,
-            recipientEntity: "contact",
-            recipientId: contact.id,
-            relatedEntity: "deal",
-            relatedId: deal.id,
-          });
+          if (String(deal.customFieldValues?.cfLeadId) === String(lead.id))
+            await logMessageInKylas({
+              userId,
+              senderNumber,
+              recipientNumber: to,
+              messageContent,
+              recipientName: contact.name,
+              attachments,
+              recipientEntity: "contact",
+              recipientId: contact.id,
+              relatedEntity: "deal",
+              relatedId: deal.id,
+            });
         }
       }
     }

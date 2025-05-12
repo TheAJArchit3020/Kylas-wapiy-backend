@@ -220,6 +220,7 @@ router.post("/webhook/redington", async (req, res) => {
           url: messageContentRaw.url,
         });
       }
+      const matchedLeadIds = [];
       for (const lead of leads) {
         console.log("the lead: ", lead);
         const leadId = lead.id;
@@ -234,6 +235,7 @@ router.post("/webhook/redington", async (req, res) => {
           lead.lastName || ""
         }`.trim();
         const senderNumber = await getSenderPhoneNumber(projectId);
+        matchedLeadIds.push(String(leadId));
         await logMessageInKylas({
           userId: kylasUserId,
           leadId,
@@ -329,17 +331,20 @@ router.post("/webhook/redington", async (req, res) => {
 
         // ✅ Step 3: Log message for each deal
         for (const deal of deals) {
-          await logMessageInKylas({
-            userId: kylasUserId,
-            leadId: deal.id,
-            messageContent,
-            senderNumber,
-            recipientNumber: phoneNumber,
-            attachments,
-            recipientName: contact.firstName + " " + contact.lastName,
-            entityType: "deal",
-            contactId: contact.id,
-          });
+          const dealLeadId = deal.customFieldValues?.cfLeadId;
+          if (dealLeadId && matchedLeadIds.includes(String(dealLeadId))) {
+            await logMessageInKylas({
+              userId: kylasUserId,
+              leadId: deal.id,
+              messageContent,
+              senderNumber,
+              recipientNumber: phoneNumber,
+              attachments,
+              recipientName: contact.firstName + " " + contact.lastName,
+              entityType: "deal",
+              contactId: contact.id,
+            });
+          }
         }
       }
 
