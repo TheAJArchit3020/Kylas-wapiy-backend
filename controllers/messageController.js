@@ -439,6 +439,9 @@ exports.sendMessage = async (req, res) => {
 
       const contacts = contactsRes.data.content || [];
       for (const contact of contacts) {
+        const contactName = `${contact.firstName || ""} ${
+          contact.lastName || ""
+        }`.trim();
         const dealSearchBody = {
           jsonRule: {
             condition: "AND",
@@ -450,7 +453,7 @@ exports.sendMessage = async (req, res) => {
                 type: "multi_field",
                 input: "multi_field",
                 operator: "multi_field",
-                value: contact.id.toString(),
+                value: contactName,
               },
             ],
           },
@@ -671,6 +674,82 @@ exports.sendTemplateMessage = async (req, res) => {
         relatedEntity: "lead",
         relatedId: lead.id,
       });
+      const contactSearchBody = {
+        jsonRule: {
+          condition: "AND",
+          valid: true,
+          rules: [
+            {
+              id: "multi_field",
+              field: "multi_field",
+              type: "multi_field",
+              input: "multi_field",
+              operator: "multi_field",
+              value: `+${phone}`,
+            },
+          ],
+        },
+      };
+
+      const contactsRes = await axios.post(
+        `${API_KYLAS}/search/contact?page=0&size=10`,
+        contactSearchBody,
+        {
+          headers: {
+            "api-key": user.kylasAPIKey,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const contacts = contactsRes.data.content || [];
+      for (const contact of contacts) {
+        const contactName = `${contact.firstName || ""} ${
+          contact.lastName || ""
+        }`.trim();
+        const dealSearchBody = {
+          jsonRule: {
+            condition: "AND",
+            valid: true,
+            rules: [
+              {
+                id: "multi_field",
+                field: "multi_field",
+                type: "multi_field",
+                input: "multi_field",
+                operator: "multi_field",
+                value: contactName,
+              },
+            ],
+          },
+        };
+
+        const dealsRes = await axios.post(
+          `${API_KYLAS}/search/deal?page=0&size=10`,
+          dealSearchBody,
+          {
+            headers: {
+              "api-key": user.kylasAPIKey,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const deals = dealsRes.data.content || [];
+        for (const deal of deals) {
+          await logMessageInKylas({
+            userId,
+            senderNumber,
+            recipientNumber: to,
+            messageContent,
+            recipientName: contact.name,
+            attachments,
+            recipientEntity: "contact",
+            recipientId: contact.id,
+            relatedEntity: "deal",
+            relatedId: deal.id,
+          });
+        }
+      }
     }
 
     res.json({ message: "Template message sent successfully!" });

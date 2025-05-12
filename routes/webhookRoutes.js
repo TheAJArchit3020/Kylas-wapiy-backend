@@ -293,7 +293,9 @@ router.post("/webhook/redington", async (req, res) => {
 
       for (const contact of contacts) {
         const contactId = contact.id;
-
+        const contactName = `${contact.firstName || ""} ${
+          contact.lastName || ""
+        }`.trim();
         const dealSearchBody = {
           jsonRule: {
             condition: "AND",
@@ -305,7 +307,7 @@ router.post("/webhook/redington", async (req, res) => {
                 type: "multi_field",
                 input: "multi_field",
                 operator: "multi_field",
-                value: contactId.toString(), // Contact ID used for filtering
+                value: contactName, // Contact ID used for filtering
               },
             ],
           },
