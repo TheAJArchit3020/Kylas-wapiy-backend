@@ -3,7 +3,7 @@ const User = require("../models/User");
 const API_WAPIY = "https://apis.whatsapp.redingtongroup.com";
 const API_KYLAS = "https://api.kylas.io/v1";
 const PARTNER_API_KEY = process.env.WAPIY_PARTNER_API_KEY;
-
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // **1. Fetch Lead Details from Kylas**
 const getSenderPhoneNumber = async (projectId) => {
   try {
@@ -280,7 +280,7 @@ const logMessageInKylas = async ({
         "api-key": kylasAPIKey,
       },
     });
-
+    await delay(1000);
     console.log("✅ Message logged in Kylas CRM");
   } catch (error) {
     console.error(

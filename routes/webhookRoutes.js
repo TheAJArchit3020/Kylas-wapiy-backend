@@ -10,6 +10,8 @@ const PARTNER_API_KEY = process.env.WAPIY_PARTNER_API_KEY;
 const SECRET_KEY =
   "7a322f1e4cfa17a93d7561534fa828a6aba7bc247770e3bfcc8c100aa38e916a";
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const getSenderPhoneNumber = async (projectId) => {
   try {
     const response = await axios.get(
@@ -89,6 +91,8 @@ const logMessageInKylas = async ({
         "api-key": kylasAPIKey,
       },
     });
+
+    await delay(1000);
 
     console.log("✅ Message logged in Kylas CRM");
   } catch (error) {
