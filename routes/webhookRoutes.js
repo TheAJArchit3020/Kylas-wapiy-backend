@@ -92,7 +92,7 @@ const logMessageInKylas = async ({
       },
     });
     console.log("Waiting for 1 second");
-    await delay(1000);
+    await delay(10000);
 
     //console.log("✅ Message logged in Kylas CRM");
   } catch (error) {
