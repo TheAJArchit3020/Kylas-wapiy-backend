@@ -81,18 +81,17 @@ const logMessageInKylas = async ({
       attachments,
     };
 
-    // console.log(
-    //   "📨 Logging message in Kylas:",
-    //   JSON.stringify(payload, null, 2)
-    // );
+    console.log(
+      "📨 Logging message in Kylas:",
+      JSON.stringify(payload, null, 2)
+    );
 
     await axios.post(`${API_KYLAS}/messages`, payload, {
       headers: {
         "api-key": kylasAPIKey,
       },
     });
-    console.log("Waiting for 1 second");
-    await delay(10000);
+    await delay(1000);
 
     //console.log("✅ Message logged in Kylas CRM");
   } catch (error) {
@@ -143,7 +142,7 @@ router.post("/webhook/redington", async (req, res) => {
       const userName = message.userName || "Unknown";
       const messageContentRaw = message.message_content || {};
       const messageText = message.message_content?.text || "No message content";
-      //console.log("📩 User sent a message to the business:", messageContentRaw);
+      console.log("📩 User sent a message to the business:", messageContentRaw);
       const searchBody = {
         fields: [
           "firstName",
