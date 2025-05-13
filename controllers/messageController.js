@@ -686,7 +686,7 @@ exports.sendTemplateMessage = async (req, res) => {
               type: "multi_field",
               input: "multi_field",
               operator: "multi_field",
-              value: `+${phone}`,
+              value: `+${phoneNumber}`,
             },
           ],
         },
