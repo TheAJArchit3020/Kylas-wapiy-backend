@@ -20,7 +20,7 @@ const getSenderPhoneNumber = async (projectId) => {
         headers: { "X-Partner-API-Key": PARTNER_API_KEY },
       }
     );
-    console.log("sender Phone Number: ", response.data.wa_number);
+    //console.log("sender Phone Number: ", response.data.wa_number);
     return response.data.wa_number || null;
   } catch (error) {
     console.error(
@@ -81,20 +81,20 @@ const logMessageInKylas = async ({
       attachments,
     };
 
-    console.log(
-      "📨 Logging message in Kylas:",
-      JSON.stringify(payload, null, 2)
-    );
+    // console.log(
+    //   "📨 Logging message in Kylas:",
+    //   JSON.stringify(payload, null, 2)
+    // );
 
     await axios.post(`${API_KYLAS}/messages`, payload, {
       headers: {
         "api-key": kylasAPIKey,
       },
     });
-
+    console.log("Waiting for 1 second");
     await delay(1000);
 
-    console.log("✅ Message logged in Kylas CRM");
+    //console.log("✅ Message logged in Kylas CRM");
   } catch (error) {
     console.error(
       "❌ Error logging message in Kylas:",
@@ -104,7 +104,7 @@ const logMessageInKylas = async ({
 };
 
 router.post("/webhook/redington", async (req, res) => {
-  console.log("got webhook event");
+  //console.log("got webhook event");
   let projectId;
   try {
     projectId = req.headers["x-project-id"]; // Identify the project
@@ -116,7 +116,7 @@ router.post("/webhook/redington", async (req, res) => {
   if (!projectId) {
     return res.status(400).send("Missing Project ID");
   }
-  console.log(projectId);
+  //console.log(projectId);
   let user;
   try {
     user = await User.findOne({ projectId });
@@ -126,12 +126,12 @@ router.post("/webhook/redington", async (req, res) => {
 
   if (!user) throw new Error("User not found for given project ID");
 
-  console.log("got the kylas user");
+  //console.log("got the kylas user");
   const kylasAPIKey = user.kylasAPIKey;
   const kylasUserId = user.kylasUserId;
 
   const { topic, data } = req.body;
-  console.log("✅ Webhook received:", req.body);
+  //console.log("✅ Webhook received:", req.body);
 
   // Handle different webhook events
   switch (topic) {
@@ -139,11 +139,11 @@ router.post("/webhook/redington", async (req, res) => {
       const message = data.message;
       const phoneNumber = message.phone_number;
       const senderNumber = await getSenderPhoneNumber(projectId);
-      console.log("The Phone Number", phoneNumber);
+      //console.log("The Phone Number", phoneNumber);
       const userName = message.userName || "Unknown";
       const messageContentRaw = message.message_content || {};
       const messageText = message.message_content?.text || "No message content";
-      console.log("📩 User sent a message to the business:", messageContentRaw);
+      //console.log("📩 User sent a message to the business:", messageContentRaw);
       const searchBody = {
         fields: [
           "firstName",
@@ -199,10 +199,10 @@ router.post("/webhook/redington", async (req, res) => {
       );
 
       const leads = leadSearchResponse.data.content;
-      console.log("All the leads ", leads);
+      //console.log("All the leads ", leads);
 
       if (leads.length === 0) {
-        console.log("⚠️ No matching leads found in Kylas for:", phoneNumber);
+        //console.log("⚠️ No matching leads found in Kylas for:", phoneNumber);
         return res.sendStatus(200);
       }
 
@@ -227,7 +227,7 @@ router.post("/webhook/redington", async (req, res) => {
       }
       const matchedLeadIds = [];
       for (const lead of leads) {
-        console.log("the lead: ", lead);
+        //console.log("the lead: ", lead);
         const leadId = lead.id;
         const leadResponse = await axios.get(`${API_KYLAS}/leads/${leadId}`, {
           headers: {
@@ -235,7 +235,7 @@ router.post("/webhook/redington", async (req, res) => {
             "Content-Type": "application/json",
           },
         });
-        console.log("lead response", leadResponse.data);
+        //console.log("lead response", leadResponse.data);
         const leadName = `${lead.firstName || ""} ${
           lead.lastName || ""
         }`.trim();
@@ -294,7 +294,7 @@ router.post("/webhook/redington", async (req, res) => {
       );
 
       const contacts = contactSearchRes.data.content || [];
-      console.log("📒 Contacts found:", contacts);
+      //console.log("📒 Contacts found:", contacts);
 
       // search the deal which is accosiated with that contacts list
 
@@ -332,7 +332,7 @@ router.post("/webhook/redington", async (req, res) => {
         );
 
         const deals = dealSearchRes.data.content || [];
-        console.log(`📈 Deals found for contact ${contactId}:`, deals);
+        //console.log(`📈 Deals found for contact ${contactId}:`, deals);
 
         // ✅ Step 3: Log message for each deal
         for (const deal of deals) {

@@ -13,7 +13,7 @@ const getSenderPhoneNumber = async (projectId) => {
         headers: { "X-Partner-API-Key": PARTNER_API_KEY },
       }
     );
-    console.log("sender Phone Number: ", response.data.wa_number);
+    //console.log("sender Phone Number: ", response.data.wa_number);
     return response.data.wa_number || null;
   } catch (error) {
     console.error(
@@ -43,7 +43,7 @@ const getTemplateIdFromRedington = async (projectId, templateName) => {
     // console.log("Redington template list:", templates);
 
     const template = templates.find((t) => t.name === templateName);
-    console.log("Redington Template Object:", template);
+    //console.log("Redington Template Object:", template);
 
     return template ? template.id : null;
   } catch (error) {
@@ -63,7 +63,7 @@ const getTemplateTextFromRedington = async (projectId, waTemplateId) => {
         headers: { "X-Partner-API-Key": PARTNER_API_KEY },
       }
     );
-    console.log("template text redington: ", response.data.text);
+    //console.log("template text redington: ", response.data.text);
     return response.data.text || null;
   } catch (error) {
     console.error(
@@ -81,7 +81,7 @@ exports.getLeadDetails = async (req, res) => {
   try {
     const { leadId, userId, entityType } = req.params;
 
-    console.log("entity Type", entityType);
+    //console.log("entity Type", entityType);
     // Find user in the database
     let user = await User.findOne({ kylasUserId: userId });
 
@@ -100,7 +100,7 @@ exports.getLeadDetails = async (req, res) => {
     }
 
     let kylasAPIKey = user.kylasAPIKey;
-    console.log("Using Kylas API Key:", kylasAPIKey);
+    //console.log("Using Kylas API Key:", kylasAPIKey);
 
     let response;
     if (entityType === "deal") {
@@ -109,8 +109,8 @@ exports.getLeadDetails = async (req, res) => {
           "api-key": kylasAPIKey, // Using API Key instead of Bearer Token
         },
       });
-      console.log("The deal response", dealResponse.data);
-      console.log("lead id", dealResponse.data.customFieldValues.cfLeadId);
+      //console.log("The deal response", dealResponse.data);
+      //console.log("lead id", dealResponse.data.customFieldValues.cfLeadId);
       response = await axios.get(
         `${API_KYLAS}/leads/${dealResponse.data.customFieldValues.cfLeadId}`,
         {
@@ -125,7 +125,7 @@ exports.getLeadDetails = async (req, res) => {
           "api-key": kylasAPIKey, // Using API Key instead of Bearer Token
         },
       });
-      console.log("lead id", leadId);
+      //console.log("lead id", leadId);
     }
     // Fetch lead details
 
@@ -187,7 +187,7 @@ exports.checkOrCreateContact = async (req, res) => {
       contact = fetchResponse.data;
     } catch (error) {
       if (error.response && error.response.status === 404) {
-        console.log("Contact not found. Creating a new one...");
+        //console.log("Contact not found. Creating a new one...");
 
         // Step 2: Create contact if not found
         const createResponse = await axios.post(
@@ -270,10 +270,10 @@ const logMessageInKylas = async ({
       attachments,
     };
 
-    console.log(
-      "📨 Logging message in Kylas:",
-      JSON.stringify(payload, null, 2)
-    );
+    //console.log(
+    //  "📨 Logging message in Kylas:",
+    // JSON.stringify(payload, null, 2)
+    //);
 
     await axios.post(`${API_KYLAS}/messages`, payload, {
       headers: {
@@ -281,7 +281,7 @@ const logMessageInKylas = async ({
       },
     });
     await delay(1000);
-    console.log("✅ Message logged in Kylas CRM");
+    //console.log("✅ Message logged in Kylas CRM");
   } catch (error) {
     console.error(
       "❌ Error logging message in Kylas:",
@@ -320,10 +320,10 @@ exports.sendMessage = async (req, res) => {
         : { text: { body: message } }), // Otherwise, send text
     };
 
-    console.log(
-      "🚀 Sending Normal WhatsApp Message:",
-      JSON.stringify(payload, null, 2)
-    );
+    //console.log(
+    //  "🚀 Sending Normal WhatsApp Message:",
+    //  JSON.stringify(payload, null, 2)
+    //);
 
     await axios.post(
       `${API_WAPIY}/project-apis/v1/project/${projectId}/messages`,
@@ -578,7 +578,7 @@ exports.sendTemplateMessage = async (req, res) => {
         );
       }
     });
-    console.log(JSON.stringify(sanitizedTemplate, null, 2));
+    //console.log(JSON.stringify(sanitizedTemplate, null, 2));
     // Replace placeholders {{1}}, {{2}}, etc., in the message text with actual values
     messageContent = messageContent.replace(/{{(\d+)}}/g, (match, number) => {
       return parameterValues[number - 1] || match;
@@ -603,8 +603,8 @@ exports.sendTemplateMessage = async (req, res) => {
       }
     );
 
-    console.log("✅ Template message sent successfully!");
-    console.log("Message Content: ", messageContent);
+    //console.log("✅ Template message sent successfully!");
+    //console.log("Message Content: ", messageContent);
     if (entityType === "deal") {
       const deal = await axios
         .get(`${API_KYLAS}/deals/${leadId}`, {
