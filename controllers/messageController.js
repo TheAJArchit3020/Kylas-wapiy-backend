@@ -431,7 +431,7 @@ exports.sendMessage = async (req, res) => {
         contactSearchBody,
         {
           headers: {
-            "api-key": kylasAPIKey,
+            "api-key": user.kylasAPIKey,
             "Content-Type": "application/json",
           },
         }
@@ -464,7 +464,7 @@ exports.sendMessage = async (req, res) => {
           dealSearchBody,
           {
             headers: {
-              "api-key": kylasAPIKey,
+              "api-key": user.kylasAPIKey,
               "Content-Type": "application/json",
             },
           }
