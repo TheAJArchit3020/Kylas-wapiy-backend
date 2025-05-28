@@ -311,6 +311,8 @@ exports.sendMessage = async (req, res) => {
         .json({ error: "Failed to fetch sender phone number" });
 
     // Prepare the payload for WhatsApp API
+
+    ///change this for document !
     const payload = {
       recipient_type: "individual",
       to,
@@ -337,6 +339,7 @@ exports.sendMessage = async (req, res) => {
       }
     );
 
+    //change for document
     const attachments = imageUrl
       ? [{ fileName: "uploaded_image.jpg", url: imageUrl }]
       : [];
