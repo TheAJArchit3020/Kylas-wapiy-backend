@@ -292,7 +292,8 @@ const logMessageInKylas = async ({
 // **2. Send Normal Message**
 exports.sendMessage = async (req, res) => {
   try {
-    const { userId, to, message, leadId, imageUrl, entityType } = req.body;
+    const { userId, to, message, leadId, imageUrl, entityType,attachmentLink:document} = req.body;
+    console.log("📨 Received message:----------------------->",attachmentLink);
     const user = await User.findOne({ kylasUserId: userId });
     if (!user || !user.projectId) {
       return res.status(404).json({
@@ -313,14 +314,42 @@ exports.sendMessage = async (req, res) => {
     // Prepare the payload for WhatsApp API
 
     ///change this for document !
-    const payload = {
+    // const payload = {
+    //   recipient_type: "individual",
+    //   to,
+    //   type: imageUrl ? "image" : "text",
+    //   ...(imageUrl
+    //     ? { image: { link: imageUrl, caption: message || "" } } // Attach image if provided
+    //     : { text: { body: message } }), // Otherwise, send text
+    // };
+
+    const payload ={
       recipient_type: "individual",
       to,
-      type: imageUrl ? "image" : "text",
-      ...(imageUrl
-        ? { image: { link: imageUrl, caption: message || "" } } // Attach image if provided
-        : { text: { body: message } }), // Otherwise, send text
-    };
+      ...(document
+        ? {
+            type: "document",
+            document: {
+              link: document,
+              filename: "wds" || "document.pdf",
+              caption: message || "",
+            },
+          }
+        : imageUrl
+        ? {
+            type: "image",
+            image: {
+              link: imageUrl,
+              caption: message || "",
+            },
+          }
+        : {
+            type: "text",
+            text: {
+              body: message,
+            },
+          }),
+    }
 
     //console.log(
     //  "🚀 Sending Normal WhatsApp Message:",
@@ -340,9 +369,22 @@ exports.sendMessage = async (req, res) => {
     );
 
     //change for document
-    const attachments = imageUrl
-      ? [{ fileName: "uploaded_image.jpg", url: imageUrl }]
-      : [];
+    // const attachments = imageUrl
+    //   ? [{ fileName: "uploaded_image.jpg", url: imageUrl }]
+    //   : [];
+
+    if(imageUrl){
+      attachments.push({
+        fileName: "uploaded_image.jpg",
+        url: imageUrl,
+      });
+    }else if(document){
+      attachments.push({
+        fileName: "find below document",
+        url: document,
+      });
+    } 
+
     if (entityType === "deal") {
       const dealRes = await axios.get(`${API_KYLAS}/deals/${leadId}`, {
         headers: { "api-key": user.kylasAPIKey },
