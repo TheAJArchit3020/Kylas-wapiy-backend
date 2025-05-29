@@ -372,7 +372,7 @@ exports.sendMessage = async (req, res) => {
     // const attachments = imageUrl
     //   ? [{ fileName: "uploaded_image.jpg", url: imageUrl }]
     //   : [];
-
+    const attachments = [];
     if(imageUrl){
       attachments.push({
         fileName: "uploaded_image.jpg",
