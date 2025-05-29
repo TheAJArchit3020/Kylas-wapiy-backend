@@ -293,7 +293,7 @@ const logMessageInKylas = async ({
 exports.sendMessage = async (req, res) => {
   try {
     const { userId, to, message, leadId, imageUrl, entityType,attachmentLink:document} = req.body;
-    console.log("📨 Received message:----------------------->",attachmentLink);
+    console.log("📨 Received message:----------------------->",document);
     const user = await User.findOne({ kylasUserId: userId });
     if (!user || !user.projectId) {
       return res.status(404).json({
