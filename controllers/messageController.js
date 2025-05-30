@@ -292,7 +292,7 @@ const logMessageInKylas = async ({
 // **2. Send Normal Message**
 exports.sendMessage = async (req, res) => {
   try {
-    const { userId, to, message, leadId, imageUrl, entityType,attachmentLink:document} = req.body;
+    const { userId, to, message, leadId, imageUrl, entityType,attachmentLink:document,fileName} = req.body;
     console.log("📨 Received message:----------------------->",document);
     const user = await User.findOne({ kylasUserId: userId });
     if (!user || !user.projectId) {
@@ -331,7 +331,7 @@ exports.sendMessage = async (req, res) => {
             type: "document",
             document: {
               link: document,
-              filename: "wds" || "document.pdf",
+              filename: fileName || "document.pdf",
               caption: message || "",
             },
           }
